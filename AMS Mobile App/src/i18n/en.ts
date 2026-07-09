@@ -11,6 +11,7 @@ export const en = {
     login: "Login",
     adminManagedTitle: "Admin-managed access",
     adminManagedDesc: "Employees cannot create accounts from the app. HR, manager, or organization owner creates employee access.",
+    rememberMe: "Remember me",
     forgotPassword: "Forgot password?",
     forgotPasswordDesc: "Contact your HR or admin to reset your credentials.",
     demoHint: "Demo: ahmed.khan@company.com / 123456",

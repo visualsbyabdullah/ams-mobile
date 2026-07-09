@@ -23,6 +23,7 @@ type LoginScreenProps = {
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState(mockEmployeeCredentials.email);
   const [password, setPassword] = useState(mockEmployeeCredentials.password);
+  const [rememberMe, setRememberMe] = useState(true);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
 
@@ -111,13 +112,28 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </View>
         )}
 
+        <View style={styles.formOptions}>
+          <Pressable
+            onPress={() => setRememberMe((current) => !current)}
+            style={styles.rememberButton}
+          >
+            <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+              {rememberMe && (
+                <AppIcon name="check" size={14} color="inverseText" />
+              )}
+            </View>
+
+            <AppText style={styles.rememberText}>{t("auth.rememberMe")}</AppText>
+          </Pressable>
+
+          <Pressable style={styles.forgotButton}>
+            <AppText style={styles.forgotText}>{t("auth.forgotPassword")}</AppText>
+          </Pressable>
+        </View>
+
         <Pressable onPress={submitLogin} style={styles.loginButton}>
           <AppText style={styles.loginButtonText}>{t("auth.login")}</AppText>
           <AppIcon name="chevronRight" size={18} color="inverseText" />
-        </Pressable>
-
-        <Pressable style={styles.forgotButton}>
-          <AppText style={styles.forgotText}>{t("auth.forgotPassword")}</AppText>
         </Pressable>
       </View>
 
@@ -249,6 +265,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
+  formOptions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  rememberButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accent,
+  },
+  rememberText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.textMuted,
+  },
   loginButton: {
     height: 54,
     borderRadius: 27,
@@ -265,7 +311,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   forgotButton: {
-    alignSelf: "center",
     paddingVertical: 4,
   },
   forgotText: {

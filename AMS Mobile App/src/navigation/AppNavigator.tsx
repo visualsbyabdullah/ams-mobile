@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { QuickActionSheet } from "../components/actions/QuickActionSheet";
 import { CompanyDocumentsSheet } from "../components/documents/CompanyDocumentsSheet";
 import { EmployeeCardSheet } from "../components/employee/EmployeeCardSheet";
@@ -14,12 +15,12 @@ import {
   PolicyScenarioKey,
   policyScenarios,
 } from "../features/policies/policyScenarios";
+import { ResolvedPolicy } from "../features/policies/types";
 import { getEnabledRequestTypes } from "../features/requests/requestConfig";
 import { RequestType } from "../features/requests/types";
 import { AttendanceScreen } from "../screens/attendance/AttendanceScreen";
 import { EmployeeHomeScreen } from "../screens/home/EmployeeHomeScreen";
 import { ProfileScreen } from "../screens/profile/ProfileScreen";
-import { SalesScreen } from "../screens/sales/SalesScreen";
 import { RequestsScreen } from "../screens/requests/RequestsScreen";
 import { getVisibleTabs } from "./tabConfig";
 import { AppTab } from "./types";
@@ -29,11 +30,16 @@ type AppNavigatorProps = {
   resolvedPolicy?: ResolvedPolicy;
 };
 
-export function AppNavigator({ onLogout }: AppNavigatorProps) {
+export function AppNavigator({
+  onLogout,
+  resolvedPolicy,
+}: AppNavigatorProps) {
   const [policyScenario, setPolicyScenario] =
     useState<PolicyScenarioKey>("onsiteBranch");
 
-  const policy = policyScenarios[policyScenario].policy;
+  const fallbackPolicy = policyScenarios[policyScenario].policy;
+  const policy = resolvedPolicy ?? fallbackPolicy;
+
   const visibleTabs = getVisibleTabs(policy);
   const canCreateRequest = getEnabledRequestTypes(policy).length > 0;
 

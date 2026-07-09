@@ -1,0 +1,1 @@
+export type AppTab = "home" | "requests" | "attendance" | "profile";

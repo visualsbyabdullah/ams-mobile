@@ -1,4 +1,22 @@
 export const en = {
+
+  auth: {
+    welcome: "Welcome back",
+    title: "Login to AMS",
+    subtitle: "Use the credentials provided by your HR or organization admin.",
+    email: "Email",
+    password: "Password",
+    emailPlaceholder: "Enter work email",
+    passwordPlaceholder: "Enter password",
+    login: "Login",
+    adminManagedTitle: "Admin-managed access",
+    adminManagedDesc: "Employees cannot create accounts from the app. HR, manager, or organization owner creates employee access.",
+    forgotPassword: "Forgot password?",
+    forgotPasswordDesc: "Contact your HR or admin to reset your credentials.",
+    demoHint: "Demo: ahmed.khan@company.com / 123456",
+    invalidCredentials: "Invalid demo credentials.",
+  },
+
   app: {
     name: "AMS",
   },

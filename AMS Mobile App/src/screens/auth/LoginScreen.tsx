@@ -23,6 +23,7 @@ type LoginScreenProps = {
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState(mockEmployeeCredentials.email);
   const [password, setPassword] = useState(mockEmployeeCredentials.password);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
 
   const submitLogin = () => {
@@ -78,15 +79,26 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <AppText style={styles.label}>{t("auth.password")}</AppText>
 
           <View style={styles.inputWrap}>
-            <AppIcon name="shield" size={18} color="textMuted" />
+            <AppIcon name="lock" size={18} color="textMuted" />
             <TextInput
               value={password}
               onChangeText={setPassword}
               placeholder={t("auth.passwordPlaceholder")}
               placeholderTextColor={colors.textSoft}
-              secureTextEntry
+              secureTextEntry={!passwordVisible}
               style={styles.input}
             />
+
+            <Pressable
+              onPress={() => setPasswordVisible((current) => !current)}
+              style={styles.eyeButton}
+            >
+              <AppIcon
+                name={passwordVisible ? "eyeOff" : "eye"}
+                size={18}
+                color="textMuted"
+              />
+            </Pressable>
           </View>
         </View>
 
@@ -214,6 +226,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.medium,
     fontSize: 15,
     color: colors.text,
+  },
+  eyeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorBox: {
     borderRadius: 16,

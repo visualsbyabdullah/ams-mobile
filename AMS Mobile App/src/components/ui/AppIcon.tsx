@@ -10,11 +10,14 @@ import {
   ClipboardList,
   Clock3,
   CreditCard,
+  Eye,
+  EyeOff,
   FileText,
   HandCoins,
   Home,
   Landmark,
   Laptop,
+  LockKeyhole,
   LogOut,
   LucideIcon,
   Mail,
@@ -59,6 +62,10 @@ const icons = {
   shield: ShieldCheck,
   badge: BadgeCheck,
   location: MapPin,
+
+  lock: LockKeyhole,
+  eye: Eye,
+  eyeOff: EyeOff,
 };
 
 export type IconName = keyof typeof icons;

@@ -1,5 +1,33 @@
 export const en = {
 
+
+  attendanceFlow: {
+    markTitle: "Mark Attendance",
+    markSubtitle: "Follow your assigned attendance policy.",
+    onsiteBlockedTitle: "Office device required",
+    onsiteBlockedDesc: "Your branch uses biometric or facial device attendance. Mobile check-in is not available for on-site attendance.",
+    remoteTitle: "Remote check-in",
+    remoteDesc: "Face verification is required before remote attendance can be marked.",
+    fieldTitle: "Field check-in",
+    fieldDesc: "Location and selfie proof may be required for field attendance.",
+    requirements: "Requirements",
+    faceVerification: "Face verification",
+    faceVerificationDesc: "Mock verification completed. Backend face matching will be connected later.",
+    locationProof: "Location proof",
+    locationProofDesc: "Current location will be verified when backend/device permissions are connected.",
+    selfieProof: "Selfie proof",
+    selfieProofDesc: "Selfie proof will be uploaded with field attendance.",
+    checkIn: "Check in",
+    checkOut: "Check out",
+    savedTitle: "Attendance saved",
+    checkInSavedDesc: "Your check-in action has been saved locally for preview.",
+    checkOutSavedDesc: "Your check-out action has been saved locally for preview.",
+    deviceSyncNote: "Office attendance will be synced from the configured attendance device.",
+    policyNote: "This action is controlled by organization, branch, and employee attendance policy.",
+    unavailable: "Attendance action unavailable",
+    unavailableDesc: "No mobile attendance action is enabled for this policy.",
+  },
+
   auth: {
     welcome: "Welcome back",
     title: "Login to AMS",

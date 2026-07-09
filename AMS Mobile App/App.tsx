@@ -21,6 +21,7 @@ import { colors } from "./src/theme";
 
 function AppShell() {
   const {
+    employeeBundle,
     resolvedPolicy,
     loadEmployeeBundle,
     clearEmployeeBundle,
@@ -69,6 +70,26 @@ function AppShell() {
     Manrope_600SemiBold,
     Manrope_700Bold,
   });
+
+  useEffect(() => {
+    if (
+      !authReady ||
+      !user?.email ||
+      employeeBundle ||
+      loadingEmployeeBundle ||
+      employeeBundleError
+    ) {
+      return;
+    }
+
+    void loadEmployeeBundle(user.email);
+  }, [
+    authReady,
+    user?.email,
+    employeeBundle,
+    loadingEmployeeBundle,
+    employeeBundleError,
+  ]);
 
   if (!fontsLoaded) {
     return (

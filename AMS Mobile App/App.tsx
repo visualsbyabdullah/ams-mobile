@@ -21,6 +21,7 @@ import { colors } from "./src/theme";
 
 function AppShell() {
   const {
+    resolvedPolicy,
     loadEmployeeBundle,
     clearEmployeeBundle,
     loadingEmployeeBundle,
@@ -97,7 +98,7 @@ function AppShell() {
   return (
     <>
       <StatusBar style="dark" />
-      <AppNavigator onLogout={handleLogout} />
+      <AppNavigator onLogout={handleLogout} resolvedPolicy={resolvedPolicy} />
     </>
   );
 }

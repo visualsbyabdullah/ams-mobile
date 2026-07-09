@@ -25,6 +25,7 @@ import { AppTab } from "./types";
 
 type AppNavigatorProps = {
   onLogout?: () => void;
+  resolvedPolicy?: ResolvedPolicy;
 };
 
 export function AppNavigator({ onLogout }: AppNavigatorProps) {

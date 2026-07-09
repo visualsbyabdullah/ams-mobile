@@ -1,41 +1,67 @@
 import { defaultPolicy } from "../../config/defaultPolicy";
 import { DeepPartial, ResolvedPolicy } from "./types";
 
-const isObject = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+type PolicyOverride = DeepPartial<ResolvedPolicy>;
+
+const isPlainObject = (value: unknown) => {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
 };
 
-const mergePolicy = <T extends Record<string, any>>(
-  base: T,
-  override?: DeepPartial<T>
-): T => {
-  if (!override) return base;
+const clone = <T>(value: T): T => {
+  return JSON.parse(JSON.stringify(value)) as T;
+};
 
-  const output = { ...base };
+const mergeDeep = <T>(base: T, override?: DeepPartial<T>): T => {
+  if (!override) {
+    return clone(base);
+  }
 
-  Object.keys(override).forEach((key) => {
-    const overrideValue = override[key as keyof typeof override];
-    const baseValue = base[key as keyof T];
+  if (!isPlainObject(base) || !isPlainObject(override)) {
+    return clone(override as T);
+  }
 
-    if (isObject(baseValue) && isObject(overrideValue)) {
-      output[key as keyof T] = mergePolicy(baseValue, overrideValue as any);
+  const result: Record<string, unknown> = {
+    ...(base as Record<string, unknown>),
+  };
+
+  Object.entries(override as Record<string, unknown>).forEach(([key, value]) => {
+    if (value === undefined) {
       return;
     }
 
-    if (overrideValue !== undefined) {
-      output[key as keyof T] = overrideValue as T[keyof T];
+    const currentValue = result[key];
+
+    if (isPlainObject(currentValue) && isPlainObject(value)) {
+      result[key] = mergeDeep(currentValue, value as DeepPartial<typeof currentValue>);
+      return;
     }
+
+    result[key] = clone(value);
   });
 
-  return output;
+  return result as T;
 };
 
-export const resolvePolicy = (
-  organizationPolicy?: DeepPartial<ResolvedPolicy>,
-  branchPolicy?: DeepPartial<ResolvedPolicy>,
-  employeePolicy?: DeepPartial<ResolvedPolicy>
-): ResolvedPolicy => {
-  const withOrganization = mergePolicy(defaultPolicy, organizationPolicy);
-  const withBranch = mergePolicy(withOrganization, branchPolicy);
-  return mergePolicy(withBranch, employeePolicy);
-};
+export function resolvePolicy(): ResolvedPolicy;
+export function resolvePolicy(overrides: PolicyOverride[]): ResolvedPolicy;
+export function resolvePolicy(override: PolicyOverride): ResolvedPolicy;
+export function resolvePolicy(
+  override: PolicyOverride,
+  ...overrides: PolicyOverride[]
+): ResolvedPolicy;
+export function resolvePolicy(
+  first?: PolicyOverride | PolicyOverride[],
+  ...rest: PolicyOverride[]
+): ResolvedPolicy {
+  const overrides = Array.isArray(first)
+    ? first
+    : [first, ...rest].filter(Boolean) as PolicyOverride[];
+
+  return overrides.reduce<ResolvedPolicy>((currentPolicy, override) => {
+    return mergeDeep(currentPolicy, override);
+  }, clone(defaultPolicy));
+}

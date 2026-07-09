@@ -1,11 +1,14 @@
 import { supabase } from "../../lib/supabase";
 import {
+  DeepPartial,
   ModuleAssignmentMode,
   ModuleKey,
   ModulePermissionKey,
   ModulePolicy,
   ModuleType,
+  ResolvedPolicy,
 } from "../policies/types";
+import { resolvePolicy } from "../policies/resolvePolicy";
 
 export type DbEmployee = {
   id: string;
@@ -191,6 +194,7 @@ export type EmployeeBundle = {
   moduleRoleAssignments: DbModuleRoleAssignment[];
   moduleEmployeeAssignments: DbModuleEmployeeAssignment[];
   assignedModulePolicy: AssignedModulePolicyMap;
+  resolvedPolicy: ResolvedPolicy;
 };
 
 const knownModuleKeys: ModuleKey[] = [
@@ -510,6 +514,19 @@ export const getEmployeeBundleByEmail = async (
     moduleEmployeeAssignments,
   });
 
+  const organizationPolicy = organizationPolicyResult.data?.policy ?? {};
+  const branchPolicy = branchPolicyResult.data?.policy ?? {};
+  const employeePolicyOverride = employeePolicyOverrideResult.data?.policy ?? {};
+
+  const resolvedPolicy = resolvePolicy([
+    organizationPolicy as DeepPartial<ResolvedPolicy>,
+    branchPolicy as DeepPartial<ResolvedPolicy>,
+    employeePolicyOverride as DeepPartial<ResolvedPolicy>,
+    {
+      modules: assignedModulePolicy,
+    } as DeepPartial<ResolvedPolicy>,
+  ]);
+
   return {
     employee,
     organization: unwrapSingle(
@@ -517,9 +534,9 @@ export const getEmployeeBundleByEmail = async (
       organizationResult.error
     ),
     branch: unwrapSingle(branchResult.data, branchResult.error),
-    organizationPolicy: organizationPolicyResult.data?.policy ?? {},
-    branchPolicy: branchPolicyResult.data?.policy ?? {},
-    employeePolicyOverride: employeePolicyOverrideResult.data?.policy ?? {},
+    organizationPolicy,
+    branchPolicy,
+    employeePolicyOverride,
     payrollProfile: payrollProfileResult.data ?? null,
     attendanceLogs: attendanceLogsResult.data ?? [],
     requests: requestsResult.data ?? [],
@@ -533,12 +550,13 @@ export const getEmployeeBundleByEmail = async (
     moduleRoleAssignments,
     moduleEmployeeAssignments,
     assignedModulePolicy,
+    resolvedPolicy,
   };
 };
 
 export const testSupabaseConnection = async () => {
   const bundle = await getEmployeeBundleByEmail("ahmed.khan@company.com");
-  const salesPolicy = bundle.assignedModulePolicy.sales;
+  const salesPolicy = bundle.resolvedPolicy.modules.sales;
 
   return {
     employeeName: bundle.employee.full_name,

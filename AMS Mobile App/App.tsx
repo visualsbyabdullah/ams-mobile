@@ -21,6 +21,7 @@ import { colors } from "./src/theme";
 
 function AppShell() {
   const {
+    employeeBundle,
     resolvedPolicy,
     loadEmployeeBundle,
     clearEmployeeBundle,
@@ -77,6 +78,20 @@ function AppShell() {
       </View>
     );
   }
+
+  useEffect(() => {
+    if (!authReady || !user?.email || employeeBundle || loadingEmployeeBundle) {
+      return;
+    }
+
+    void loadEmployeeBundle(user.email);
+  }, [
+    authReady,
+    user?.email,
+    employeeBundle,
+    loadingEmployeeBundle,
+    loadEmployeeBundle,
+  ]);
 
   if (!authReady) {
     return null;

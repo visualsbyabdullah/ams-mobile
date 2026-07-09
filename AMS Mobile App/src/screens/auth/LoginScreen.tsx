@@ -18,7 +18,7 @@ import { t } from "../../i18n";
 import { colors, fontFamily } from "../../theme";
 
 type LoginScreenProps = {
-  onLogin: (user: AuthUser) => void;
+  onLogin: (user: AuthUser, rememberMe: boolean) => void;
 };
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -41,7 +41,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
 
     setErrorVisible(false);
-    onLogin(mockAuthUser);
+    onLogin(mockAuthUser, rememberMe);
   };
 
   return (
@@ -161,6 +161,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
       <ForgotPasswordSheet
         visible={forgotVisible}
+        email={email}
         onClose={() => setForgotVisible(false)}
       />
     </ScrollView>

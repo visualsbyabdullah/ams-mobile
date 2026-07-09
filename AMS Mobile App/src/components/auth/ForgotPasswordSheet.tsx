@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { AppIcon } from "../ui/AppIcon";
 import { AppText } from "../ui/AppText";
@@ -6,59 +7,76 @@ import { colors } from "../../theme";
 
 type ForgotPasswordSheetProps = {
   visible: boolean;
+  email: string;
   onClose: () => void;
 };
 
 export function ForgotPasswordSheet({
   visible,
+  email,
   onClose,
 }: ForgotPasswordSheetProps) {
+  const [sent, setSent] = useState(false);
+
+  const closeSheet = () => {
+    setSent(false);
+    onClose();
+  };
+
+  const registeredEmail = email.trim() || t("auth.registeredEmailFallback");
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={closeSheet}>
       <View style={styles.root}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Pressable style={styles.backdrop} onPress={closeSheet} />
 
         <View style={styles.sheetWrap}>
           <View style={styles.sheet}>
             <View style={styles.handle} />
 
             <View style={styles.iconWrap}>
-              <AppIcon name="shield" size={26} color="accent" />
+              <AppIcon name={sent ? "check" : "mail"} size={26} color="accent" />
             </View>
 
-            <AppText style={styles.title}>{t("auth.forgotSheetTitle")}</AppText>
-            <AppText style={styles.subtitle}>{t("auth.forgotSheetDesc")}</AppText>
+            <AppText style={styles.title}>
+              {sent ? t("auth.resetEmailSentTitle") : t("auth.forgotSheetTitle")}
+            </AppText>
 
-            <View style={styles.contactCard}>
-              <View style={styles.contactIcon}>
+            <AppText style={styles.subtitle}>
+              {sent ? t("auth.resetEmailSentDesc") : t("auth.forgotSheetDesc")}
+            </AppText>
+
+            <View style={styles.emailCard}>
+              <View style={styles.emailIcon}>
                 <AppIcon name="mail" size={18} color="accent" />
               </View>
 
-              <View style={styles.contactText}>
-                <AppText style={styles.contactLabel}>{t("auth.hrEmail")}</AppText>
-                <AppText style={styles.contactValue}>hr@company.com</AppText>
-              </View>
-            </View>
-
-            <View style={styles.contactCard}>
-              <View style={styles.contactIcon}>
-                <AppIcon name="phone" size={18} color="accent" />
-              </View>
-
-              <View style={styles.contactText}>
-                <AppText style={styles.contactLabel}>{t("auth.hrPhone")}</AppText>
-                <AppText style={styles.contactValue}>0300 1234567</AppText>
+              <View style={styles.emailText}>
+                <AppText style={styles.emailLabel}>
+                  {t("auth.registeredEmail")}
+                </AppText>
+                <AppText style={styles.emailValue}>{registeredEmail}</AppText>
               </View>
             </View>
 
             <View style={styles.noteCard}>
               <AppIcon name="shield" size={17} color="accent" />
-              <AppText style={styles.noteText}>{t("auth.forgotSheetNote")}</AppText>
+              <AppText style={styles.noteText}>
+                {sent ? t("auth.resetEmailSentNote") : t("auth.forgotSheetNote")}
+              </AppText>
             </View>
 
-            <Pressable onPress={onClose} style={styles.doneButton}>
-              <AppText style={styles.doneButtonText}>{t("common.done")}</AppText>
-            </Pressable>
+            {sent ? (
+              <Pressable onPress={closeSheet} style={styles.doneButton}>
+                <AppText style={styles.doneButtonText}>{t("common.done")}</AppText>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => setSent(true)} style={styles.doneButton}>
+                <AppText style={styles.doneButtonText}>
+                  {t("auth.sendResetEmail")}
+                </AppText>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
@@ -127,7 +145,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
   },
-  contactCard: {
+  emailCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
     paddingVertical: 14,
@@ -136,7 +154,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  contactIcon: {
+  emailIcon: {
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -145,15 +163,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  contactText: {
+  emailText: {
     flex: 1,
   },
-  contactLabel: {
+  emailLabel: {
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: 3,
   },
-  contactValue: {
+  emailValue: {
     fontSize: 14,
     color: colors.text,
     fontWeight: "800",

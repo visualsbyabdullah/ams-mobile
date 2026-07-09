@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   Manrope_400Regular,
@@ -8,9 +9,12 @@ import {
 } from "@expo-google-fonts/manrope";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { AppNavigator } from "./src/navigation/AppNavigator";
+import { AuthUser } from "./src/features/auth/mockAuth";
+import { LoginScreen } from "./src/screens/auth/LoginScreen";
 import { colors } from "./src/theme";
 
 export default function App() {
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -26,10 +30,19 @@ export default function App() {
     );
   }
 
+  if (!user) {
+    return (
+      <>
+        <StatusBar style="dark" />
+        <LoginScreen onLogin={setUser} />
+      </>
+    );
+  }
+
   return (
     <>
       <StatusBar style="dark" />
-      <AppNavigator />
+      <AppNavigator onLogout={() => setUser(null)} />
     </>
   );
 }

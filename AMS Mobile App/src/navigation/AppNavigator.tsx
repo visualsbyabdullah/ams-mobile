@@ -23,7 +23,11 @@ import { RequestsScreen } from "../screens/requests/RequestsScreen";
 import { getVisibleTabs } from "./tabConfig";
 import { AppTab } from "./types";
 
-export function AppNavigator() {
+type AppNavigatorProps = {
+  onLogout?: () => void;
+};
+
+export function AppNavigator({ onLogout }: AppNavigatorProps) {
   const [policyScenario, setPolicyScenario] =
     useState<PolicyScenarioKey>("onsiteBranch");
 
@@ -156,7 +160,10 @@ export function AppNavigator() {
       <LogoutConfirmationSheet
         visible={logoutVisible}
         onClose={() => setLogoutVisible(false)}
-        onConfirm={() => setLogoutVisible(false)}
+        onConfirm={() => {
+          setLogoutVisible(false);
+          onLogout?.();
+        }}
       />
     </>
   );

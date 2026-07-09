@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   Manrope_400Regular,
@@ -11,10 +11,48 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import { AuthUser } from "./src/features/auth/mockAuth";
 import { LoginScreen } from "./src/screens/auth/LoginScreen";
+import {
+  clearAuthSession,
+  getSavedAuthSession,
+  saveAuthSession,
+} from "./src/features/auth/authStorage";
 import { colors } from "./src/theme";
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    getSavedAuthSession()
+      .then((savedUser) => {
+        if (!mounted) return;
+
+        if (savedUser) {
+          setUser(savedUser);
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setAuthReady(true);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleLogin = async (nextUser: AuthUser, rememberMe: boolean) => {
+    setUser(nextUser);
+    await saveAuthSession(nextUser, rememberMe);
+  };
+
+  const handleLogout = async () => {
+    await clearAuthSession();
+    setUser(null);
+  };
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,
@@ -30,11 +68,15 @@ export default function App() {
     );
   }
 
+  if (!authReady) {
+    return null;
+  }
+
   if (!user) {
     return (
       <>
         <StatusBar style="dark" />
-        <LoginScreen onLogin={setUser} />
+        <LoginScreen onLogin={handleLogin} />
       </>
     );
   }
@@ -42,7 +84,7 @@ export default function App() {
   return (
     <>
       <StatusBar style="dark" />
-      <AppNavigator onLogout={() => setUser(null)} />
+      <AppNavigator onLogout={handleLogout} />
     </>
   );
 }

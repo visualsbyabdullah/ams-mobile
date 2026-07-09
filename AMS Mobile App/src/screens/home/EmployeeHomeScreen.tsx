@@ -7,7 +7,6 @@ import {
   isModuleEnabled,
 } from "../../features/policies/guards";
 import { ResolvedPolicy } from "../../features/policies/types";
-import { useEmployeeSession } from "../../features/session";
 import { t } from "../../i18n";
 import { colors } from "../../theme";
 
@@ -92,12 +91,6 @@ export function EmployeeHomeScreen({
   onMenuPress,
   onNotificationPress,
 }: EmployeeHomeScreenProps) {
-  const {
-    employeeBundle,
-    employeeBundleError,
-    loadingEmployeeBundle,
-  } = useEmployeeSession();
-
   const notificationsEnabled = isModuleEnabled(policy, "notifications");
   const wfhEnabled = canRequestWfh(policy);
   const salesEnabled = canUseSales(policy);
@@ -131,28 +124,6 @@ export function EmployeeHomeScreen({
       <View style={styles.heroBlock}>
         <AppText style={styles.heroGreeting}>{t("home.greeting")}</AppText>
         <AppText style={styles.heroTitle}>{t("home.title")}</AppText>
-      </View>
-
-      <View style={styles.debugCard}>
-        <AppText style={styles.debugTitle}>AMS DB Debug</AppText>
-        <AppText style={styles.debugText}>
-          DB Loaded: {employeeBundle ? "YES" : "NO"}
-        </AppText>
-        <AppText style={styles.debugText}>
-          Loading: {loadingEmployeeBundle ? "YES" : "NO"}
-        </AppText>
-        <AppText style={styles.debugText}>
-          Error: {employeeBundleError ?? "None"}
-        </AppText>
-        <AppText style={styles.debugText}>
-          Employee: {employeeBundle?.employee.email ?? "None"}
-        </AppText>
-        <AppText style={styles.debugText}>
-          Sales enabled: {salesPolicy?.enabled ? "YES" : "NO"}
-        </AppText>
-        <AppText style={styles.debugText}>
-          Sales assigned: {salesPolicy?.assigned ? "YES" : "NO"}
-        </AppText>
       </View>
 
       <View style={styles.statusPill}>
@@ -543,25 +514,5 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontWeight: "700",
     color: colors.accent,
-  },
-  debugCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  debugTitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  debugText: {
-    fontSize: 11,
-    lineHeight: 16,
-    color: colors.textMuted,
   },
 });

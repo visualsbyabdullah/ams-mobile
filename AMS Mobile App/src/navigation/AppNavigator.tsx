@@ -19,6 +19,7 @@ import { RequestType } from "../features/requests/types";
 import { AttendanceScreen } from "../screens/attendance/AttendanceScreen";
 import { EmployeeHomeScreen } from "../screens/home/EmployeeHomeScreen";
 import { ProfileScreen } from "../screens/profile/ProfileScreen";
+import { SalesScreen } from "../screens/sales/SalesScreen";
 import { RequestsScreen } from "../screens/requests/RequestsScreen";
 import { getVisibleTabs } from "./tabConfig";
 import { AppTab } from "./types";

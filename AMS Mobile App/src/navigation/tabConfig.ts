@@ -29,7 +29,7 @@ const attendanceTab: TabItem = {
 };
 
 const profileTab: TabItem = {
-  key: "profile",
+  key: "sales" | "profile",
   label: "home.bottomProfile",
   icon: "profile",
 };

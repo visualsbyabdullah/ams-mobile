@@ -394,4 +394,13 @@ export const en = {
     timeToday: "Today",
     timeYesterday: "Yesterday",
   },
+  "sales.eyebrow": "Assigned module",
+  "sales.title": "Sales",
+  "sales.description": "Add and review sales activity assigned to your employee account.",
+  "sales.permissionsTitle": "Your sales permissions",
+  "sales.createSaleEntry": "Create sale entry",
+  "sales.viewOwnSales": "View own sales",
+  "sales.placeholderNote": "Sales entry form will be connected next. This screen is visible only when the Sales module is enabled and assigned to this employee.",
+  "common.enabled": "Enabled",
+  "common.disabled": "Disabled",
 };

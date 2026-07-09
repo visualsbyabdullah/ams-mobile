@@ -5,3 +5,10 @@ dist
 .vercel
 
 .expo/
+
+.env
+.env.local
+.env*.local
+.expo/
+dist/
+.vercel/

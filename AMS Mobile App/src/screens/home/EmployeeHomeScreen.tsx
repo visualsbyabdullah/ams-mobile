@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppIcon, IconName } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
+import { SalesModuleSheet } from "../../components/sales/SalesModuleSheet";
 import {
   canRequestWfh,
   canUseSales,
@@ -91,6 +93,8 @@ export function EmployeeHomeScreen({
   onMenuPress,
   onNotificationPress,
 }: EmployeeHomeScreenProps) {
+  const [salesSheetVisible, setSalesSheetVisible] = useState(false);
+
   const notificationsEnabled = isModuleEnabled(policy, "notifications");
   const wfhEnabled = canRequestWfh(policy);
   const salesEnabled = canUseSales(policy);
@@ -178,7 +182,10 @@ export function EmployeeHomeScreen({
       </View>
 
       {salesEnabled && (
-        <Pressable style={styles.salesCard}>
+        <Pressable
+          style={styles.salesCard}
+          onPress={() => setSalesSheetVisible(true)}
+        >
           <View style={styles.salesIconWrap}>
             <AppIcon name="request" size={18} color="accent" />
           </View>
@@ -242,6 +249,10 @@ export function EmployeeHomeScreen({
           );
         })}
       </View>
+      <SalesModuleSheet
+        visible={salesSheetVisible}
+        onClose={() => setSalesSheetVisible(false)}
+      />
     </ScrollView>
   );
 }

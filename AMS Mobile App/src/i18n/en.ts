@@ -16,6 +16,11 @@ export const en = {
     forgotPasswordDesc: "Contact your HR or admin to reset your credentials.",
     demoHint: "Demo: ahmed.khan@company.com / 123456",
     invalidCredentials: "Invalid demo credentials.",
+    forgotSheetNote: "Password reset and employee access are managed from the admin web panel.",
+    hrPhone: "HR phone",
+    hrEmail: "HR email",
+    forgotSheetDesc: "For security, employees cannot reset credentials directly from the app. Contact your HR or organization admin.",
+    forgotSheetTitle: "Reset password",
   },
 
   app: {

@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { ForgotPasswordSheet } from "../../components/auth/ForgotPasswordSheet";
 import { AppIcon } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
 import {
@@ -26,6 +27,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [rememberMe, setRememberMe] = useState(true);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
+  const [forgotVisible, setForgotVisible] = useState(false);
 
   const submitLogin = () => {
     const emailMatches =
@@ -126,7 +128,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <AppText style={styles.rememberText}>{t("auth.rememberMe")}</AppText>
           </Pressable>
 
-          <Pressable style={styles.forgotButton}>
+          <Pressable onPress={() => setForgotVisible(true)} style={styles.forgotButton}>
             <AppText style={styles.forgotText}>{t("auth.forgotPassword")}</AppText>
           </Pressable>
         </View>
@@ -156,6 +158,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <AppIcon name="shield" size={17} color="accent" />
         <AppText style={styles.demoText}>{t("auth.demoHint")}</AppText>
       </View>
+
+      <ForgotPasswordSheet
+        visible={forgotVisible}
+        onClose={() => setForgotVisible(false)}
+      />
     </ScrollView>
   );
 }

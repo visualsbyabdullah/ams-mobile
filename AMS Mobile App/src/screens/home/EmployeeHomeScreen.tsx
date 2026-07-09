@@ -3,6 +3,7 @@ import { AppIcon, IconName } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
 import {
   canRequestWfh,
+  canUseSales,
   isModuleEnabled,
 } from "../../features/policies/guards";
 import { ResolvedPolicy } from "../../features/policies/types";
@@ -92,6 +93,7 @@ export function EmployeeHomeScreen({
 }: EmployeeHomeScreenProps) {
   const notificationsEnabled = isModuleEnabled(policy, "notifications");
   const wfhEnabled = canRequestWfh(policy);
+  const salesEnabled = canUseSales(policy);
 
   return (
     <ScrollView
@@ -173,6 +175,27 @@ export function EmployeeHomeScreen({
           </AppText>
         )}
       </View>
+
+      {salesEnabled && (
+        <Pressable style={styles.salesCard}>
+          <View style={styles.salesIconWrap}>
+            <AppIcon name="request" size={18} color="accent" />
+          </View>
+
+          <View style={styles.salesTextWrap}>
+            <AppText style={styles.salesTitle}>{t("sales.homeTitle")}</AppText>
+            <AppText style={styles.salesSubtitle}>
+              {t("sales.homeSubtitle")}
+            </AppText>
+          </View>
+
+          <View style={styles.salesBadge}>
+            <AppText style={styles.salesBadgeText}>
+              {t("sales.assigned")}
+            </AppText>
+          </View>
+        </Pressable>
+      )}
 
       <View style={styles.sectionHead}>
         <AppText style={styles.sectionTitle}>{t("home.workSnapshot")}</AppText>
@@ -444,5 +467,51 @@ const styles = StyleSheet.create({
   snapshotValue: {
     fontSize: 15,
     fontWeight: "800",
+  },
+  salesCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  salesIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  salesTextWrap: {
+    flex: 1,
+  },
+  salesTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 2,
+  },
+  salesSubtitle: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.textMuted,
+  },
+  salesBadge: {
+    borderRadius: 999,
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  salesBadgeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "700",
+    color: colors.accent,
   },
 });

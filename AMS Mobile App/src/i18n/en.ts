@@ -403,4 +403,7 @@ export const en = {
   "sales.placeholderNote": "Sales entry form will be connected next. This screen is visible only when the Sales module is enabled and assigned to this employee.",
   "common.enabled": "Enabled",
   "common.disabled": "Disabled",
+  "sales.homeTitle": "Sales module",
+  "sales.homeSubtitle": "Create and review your assigned sales activity.",
+  "sales.assigned": "Assigned",
 };

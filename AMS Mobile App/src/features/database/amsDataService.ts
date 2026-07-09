@@ -555,7 +555,7 @@ export const getEmployeeBundleByEmail = async (
 };
 
 export const testSupabaseConnection = async () => {
-  const bundle = await getEmployeeBundleByEmail("ahmed.khan@company.com");
+  const bundle = await getEmployeeBundleByEmail("ahmed.personal@gmail.com");
   const salesPolicy = bundle.resolvedPolicy.modules.sales;
 
   return {

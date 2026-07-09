@@ -1,5 +1,5 @@
 export const mockEmployeeCredentials = {
-  email: "ahmed.khan@company.com",
+  email: "ahmed.personal@gmail.com",
   password: "123456",
 };
 
@@ -15,7 +15,7 @@ export type AuthUser = {
 export const mockAuthUser: AuthUser = {
   id: "emp_1024",
   name: "Ahmed Khan",
-  email: "ahmed.khan@company.com",
+  email: "ahmed.personal@gmail.com",
   role: "employee",
   organizationId: "org_001",
   branchId: "branch_karachi",

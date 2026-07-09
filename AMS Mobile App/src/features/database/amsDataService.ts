@@ -1,4 +1,11 @@
 import { supabase } from "../../lib/supabase";
+import {
+  ModuleAssignmentMode,
+  ModuleKey,
+  ModulePermissionKey,
+  ModulePolicy,
+  ModuleType,
+} from "../policies/types";
 
 export type DbEmployee = {
   id: string;
@@ -111,6 +118,59 @@ export type DbPolicyRecord = {
   policy: Record<string, unknown>;
 };
 
+export type DbModule = {
+  key: string;
+  name: string;
+  module_type: ModuleType;
+  assignment_required: boolean;
+  is_platform_enabled: boolean;
+};
+
+export type DbOrganizationModule = {
+  id: string;
+  organization_id: string;
+  module_key: string;
+  enabled: boolean;
+};
+
+export type DbBranchModule = {
+  id: string;
+  branch_id: string;
+  module_key: string;
+  enabled: boolean;
+  assignment_mode: ModuleAssignmentMode;
+};
+
+export type DbRole = {
+  id: string;
+  organization_id: string;
+  name: string;
+  key: string;
+};
+
+export type DbEmployeeRole = {
+  id: string;
+  employee_id: string;
+  role_id: string;
+};
+
+export type DbModuleRoleAssignment = {
+  id: string;
+  branch_id: string;
+  module_key: string;
+  role_id: string;
+};
+
+export type DbModuleEmployeeAssignment = {
+  id: string;
+  branch_id: string;
+  module_key: string;
+  employee_id: string;
+  permissions: Partial<Record<ModulePermissionKey, boolean>>;
+};
+
+export type AssignedModulePolicyMap = Partial<Record<ModuleKey, ModulePolicy>>;
+
 export type EmployeeBundle = {
   employee: DbEmployee;
   organization: DbOrganization;
@@ -123,6 +183,40 @@ export type EmployeeBundle = {
   requests: DbEmployeeRequest[];
   salarySlip: DbSalarySlip | null;
   documents: DbCompanyDocument[];
+
+  modules: DbModule[];
+  organizationModules: DbOrganizationModule[];
+  branchModules: DbBranchModule[];
+  employeeRoles: DbEmployeeRole[];
+  moduleRoleAssignments: DbModuleRoleAssignment[];
+  moduleEmployeeAssignments: DbModuleEmployeeAssignment[];
+  assignedModulePolicy: AssignedModulePolicyMap;
+};
+
+const knownModuleKeys: ModuleKey[] = [
+  "attendance",
+  "deviceAttendance",
+  "remoteAttendance",
+  "fieldAttendance",
+  "breakTracking",
+  "leaveRequests",
+  "wfhRequests",
+  "loans",
+  "tickets",
+  "documents",
+  "payroll",
+  "salarySlips",
+  "notifications",
+  "sales",
+  "inventory",
+  "mediaTasks",
+  "delivery",
+  "inspection",
+  "siteVisits",
+];
+
+const isKnownModuleKey = (value: string): value is ModuleKey => {
+  return knownModuleKeys.includes(value as ModuleKey);
 };
 
 const unwrapSingle = <T>(data: T | null, error: { message: string } | null) => {
@@ -135,6 +229,115 @@ const unwrapSingle = <T>(data: T | null, error: { message: string } | null) => {
   }
 
   return data;
+};
+
+const defaultPermissionsForAssignedModule = (
+  moduleKey: ModuleKey,
+  assigned: boolean
+): Partial<Record<ModulePermissionKey, boolean>> => {
+  if (!assigned) {
+    return {};
+  }
+
+  if (moduleKey === "sales") {
+    return {
+      createSaleEntry: true,
+      viewOwnSales: true,
+      viewBranchSales: false,
+      captureLocation: true,
+      uploadAttachment: true,
+    };
+  }
+
+  return {
+    createEntry: true,
+    viewOwnEntries: true,
+    viewBranchEntries: false,
+    captureLocation: true,
+    uploadAttachment: true,
+  };
+};
+
+export const buildAssignedModulePolicy = ({
+  modules,
+  organizationModules,
+  branchModules,
+  employeeRoles,
+  moduleRoleAssignments,
+  moduleEmployeeAssignments,
+}: {
+  modules: DbModule[];
+  organizationModules: DbOrganizationModule[];
+  branchModules: DbBranchModule[];
+  employeeRoles: DbEmployeeRole[];
+  moduleRoleAssignments: DbModuleRoleAssignment[];
+  moduleEmployeeAssignments: DbModuleEmployeeAssignment[];
+}): AssignedModulePolicyMap => {
+  const moduleDefinitions = new Map(
+    modules.map((module) => [module.key, module])
+  );
+
+  const organizationModuleMap = new Map(
+    organizationModules.map((module) => [module.module_key, module])
+  );
+
+  const employeeRoleIds = new Set(employeeRoles.map((role) => role.role_id));
+
+  const policy: AssignedModulePolicyMap = {};
+
+  branchModules.forEach((branchModule) => {
+    if (!isKnownModuleKey(branchModule.module_key)) {
+      return;
+    }
+
+    const moduleKey = branchModule.module_key;
+    const moduleDefinition = moduleDefinitions.get(moduleKey);
+
+    if (!moduleDefinition) {
+      return;
+    }
+
+    const organizationModule = organizationModuleMap.get(moduleKey);
+
+    const platformEnabled = moduleDefinition.is_platform_enabled;
+    const organizationEnabled = organizationModule?.enabled === true;
+    const branchEnabled = branchModule.enabled === true;
+
+    const enabled = platformEnabled && organizationEnabled && branchEnabled;
+
+    const employeeAssignment = moduleEmployeeAssignments.find(
+      (assignment) => assignment.module_key === moduleKey
+    );
+
+    const roleAssignmentExists = moduleRoleAssignments.some(
+      (assignment) =>
+        assignment.module_key === moduleKey &&
+        employeeRoleIds.has(assignment.role_id)
+    );
+
+    const assignmentRequired = moduleDefinition.assignment_required;
+
+    const assigned =
+      !assignmentRequired ||
+      branchModule.assignment_mode === "all_branch_employees" ||
+      (branchModule.assignment_mode === "selected_employees" &&
+        Boolean(employeeAssignment)) ||
+      (branchModule.assignment_mode === "selected_roles" &&
+        roleAssignmentExists);
+
+    policy[moduleKey] = {
+      enabled,
+      moduleType: moduleDefinition.module_type,
+      assignmentRequired,
+      assignmentMode: branchModule.assignment_mode,
+      assigned,
+      permissions:
+        employeeAssignment?.permissions ??
+        defaultPermissionsForAssignedModule(moduleKey, assigned),
+    };
+  });
+
+  return policy;
 };
 
 export const getEmployeeByEmail = async (email: string) => {
@@ -163,6 +366,12 @@ export const getEmployeeBundleByEmail = async (
     requestsResult,
     salarySlipResult,
     documentsResult,
+    modulesResult,
+    organizationModulesResult,
+    branchModulesResult,
+    employeeRolesResult,
+    moduleRoleAssignmentsResult,
+    moduleEmployeeAssignmentsResult,
   ] = await Promise.all([
     supabase
       .from("organizations")
@@ -231,6 +440,39 @@ export const getEmployeeBundleByEmail = async (
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .returns<DbCompanyDocument[]>(),
+
+    supabase.from("modules").select("*").returns<DbModule[]>(),
+
+    supabase
+      .from("organization_modules")
+      .select("*")
+      .eq("organization_id", employee.organization_id)
+      .returns<DbOrganizationModule[]>(),
+
+    supabase
+      .from("branch_modules")
+      .select("*")
+      .eq("branch_id", employee.branch_id)
+      .returns<DbBranchModule[]>(),
+
+    supabase
+      .from("employee_roles")
+      .select("*")
+      .eq("employee_id", employee.id)
+      .returns<DbEmployeeRole[]>(),
+
+    supabase
+      .from("module_role_assignments")
+      .select("*")
+      .eq("branch_id", employee.branch_id)
+      .returns<DbModuleRoleAssignment[]>(),
+
+    supabase
+      .from("module_employee_assignments")
+      .select("*")
+      .eq("branch_id", employee.branch_id)
+      .eq("employee_id", employee.id)
+      .returns<DbModuleEmployeeAssignment[]>(),
   ]);
 
   if (organizationResult.error) throw new Error(organizationResult.error.message);
@@ -243,6 +485,30 @@ export const getEmployeeBundleByEmail = async (
   if (requestsResult.error) throw new Error(requestsResult.error.message);
   if (salarySlipResult.error) throw new Error(salarySlipResult.error.message);
   if (documentsResult.error) throw new Error(documentsResult.error.message);
+  if (modulesResult.error) throw new Error(modulesResult.error.message);
+  if (organizationModulesResult.error) throw new Error(organizationModulesResult.error.message);
+  if (branchModulesResult.error) throw new Error(branchModulesResult.error.message);
+  if (employeeRolesResult.error) throw new Error(employeeRolesResult.error.message);
+  if (moduleRoleAssignmentsResult.error) throw new Error(moduleRoleAssignmentsResult.error.message);
+  if (moduleEmployeeAssignmentsResult.error) {
+    throw new Error(moduleEmployeeAssignmentsResult.error.message);
+  }
+
+  const modules = modulesResult.data ?? [];
+  const organizationModules = organizationModulesResult.data ?? [];
+  const branchModules = branchModulesResult.data ?? [];
+  const employeeRoles = employeeRolesResult.data ?? [];
+  const moduleRoleAssignments = moduleRoleAssignmentsResult.data ?? [];
+  const moduleEmployeeAssignments = moduleEmployeeAssignmentsResult.data ?? [];
+
+  const assignedModulePolicy = buildAssignedModulePolicy({
+    modules,
+    organizationModules,
+    branchModules,
+    employeeRoles,
+    moduleRoleAssignments,
+    moduleEmployeeAssignments,
+  });
 
   return {
     employee,
@@ -259,11 +525,20 @@ export const getEmployeeBundleByEmail = async (
     requests: requestsResult.data ?? [],
     salarySlip: salarySlipResult.data ?? null,
     documents: documentsResult.data ?? [],
+
+    modules,
+    organizationModules,
+    branchModules,
+    employeeRoles,
+    moduleRoleAssignments,
+    moduleEmployeeAssignments,
+    assignedModulePolicy,
   };
 };
 
 export const testSupabaseConnection = async () => {
   const bundle = await getEmployeeBundleByEmail("ahmed.khan@company.com");
+  const salesPolicy = bundle.assignedModulePolicy.sales;
 
   return {
     employeeName: bundle.employee.full_name,
@@ -272,5 +547,9 @@ export const testSupabaseConnection = async () => {
     attendanceCount: bundle.attendanceLogs.length,
     requestCount: bundle.requests.length,
     documentCount: bundle.documents.length,
+    salesEnabled: salesPolicy?.enabled === true,
+    salesAssigned: salesPolicy?.assigned === true,
+    canCreateSaleEntry:
+      salesPolicy?.permissions?.createSaleEntry === true,
   };
 };

@@ -9,6 +9,7 @@ import {
 } from "@expo-google-fonts/manrope";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { AppNavigator } from "./src/navigation/AppNavigator";
+import { EmployeeSessionProvider, useEmployeeSession } from "./src/features/session";
 import { AuthUser } from "./src/features/auth/mockAuth";
 import { LoginScreen } from "./src/screens/auth/LoginScreen";
 import {
@@ -18,7 +19,13 @@ import {
 } from "./src/features/auth/authStorage";
 import { colors } from "./src/theme";
 
-export default function App() {
+function AppShell() {
+  const {
+    loadEmployeeBundle,
+    clearEmployeeBundle,
+    loadingEmployeeBundle,
+    employeeBundleError,
+  } = useEmployeeSession();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
@@ -45,11 +52,17 @@ export default function App() {
   }, []);
 
   const handleLogin = async (nextUser: AuthUser, rememberMe: boolean) => {
+    const loadedBundle = await loadEmployeeBundle(nextUser.email);
+
+    if (!loadedBundle) {
+      return;
+    }
     setUser(nextUser);
     await saveAuthSession(nextUser, rememberMe);
   };
 
   const handleLogout = async () => {
+    clearEmployeeBundle();
     await clearAuthSession();
     setUser(null);
   };
@@ -97,3 +110,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 });
+
+export default function AppRoot() {
+  return (
+    <EmployeeSessionProvider>
+      <AppShell />
+    </EmployeeSessionProvider>
+  );
+}

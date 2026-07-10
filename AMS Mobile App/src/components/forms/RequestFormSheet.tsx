@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Calendar } from "lucide-react-native";
 import { RequestType } from "../../features/requests/types";
 import { useEmployeeRequests } from "../../features/requests";
 import { t } from "../../i18n";
@@ -22,6 +23,8 @@ type RequestMeta = {
   color: keyof typeof colors;
   softColor: keyof typeof colors;
 };
+
+type CalendarField = "primary" | "secondary";
 
 const meta: Record<RequestType, RequestMeta> = {
   leave: {
@@ -54,29 +57,41 @@ const meta: Record<RequestType, RequestMeta> = {
   },
 };
 
-const getTodayValue = () => {
+const getTodayDate = () => {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};
+
+const toDisplayDateValue = (date: Date) => {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
+
+const toDatabaseDateValue = (date: Date) => {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
 
   return `${year}-${month}-${day}`;
 };
 
-const parseDateInput = (value: string) => {
+const parseDisplayDateInput = (value: string) => {
   const trimmed = value.trim();
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
     return null;
   }
 
-  const [year, month, day] = trimmed.split("-").map(Number);
+  const [day, month, year] = trimmed.split("/").map(Number);
   const date = new Date(year, month - 1, day);
 
   if (
-    date.getFullYear() !== year ||
+    date.getDate() !== day ||
     date.getMonth() !== month - 1 ||
-    date.getDate() !== day
+    date.getFullYear() !== year
   ) {
     return null;
   }
@@ -84,23 +99,152 @@ const parseDateInput = (value: string) => {
   return date;
 };
 
-const toDateValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+const isBeforeToday = (date: Date) => {
+  return date.getTime() < getTodayDate().getTime();
 };
 
-const isBeforeToday = (date: Date) => {
-  const today = parseDateInput(getTodayValue());
+const getMonthCells = (monthDate: Date) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leadingEmptyDays = firstDay.getDay();
 
-  if (!today) {
-    return false;
+  const cells: Array<Date | null> = [];
+
+  for (let index = 0; index < leadingEmptyDays; index += 1) {
+    cells.push(null);
   }
 
-  return date.getTime() < today.getTime();
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(new Date(year, month, day));
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  return cells;
 };
+
+function DateInput({
+  label,
+  value,
+  placeholder,
+  onChangeText,
+  onCalendarPress,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onChangeText: (value: string) => void;
+  onCalendarPress: () => void;
+}) {
+  return (
+    <View>
+      <AppText style={styles.inputLabel}>{label}</AppText>
+
+      <View style={styles.dateInputWrap}>
+        <TextInput
+          value={value}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
+          keyboardType="numbers-and-punctuation"
+          onChangeText={onChangeText}
+          style={styles.dateInput}
+        />
+
+        <Pressable onPress={onCalendarPress} style={styles.calendarButton}>
+          <Calendar size={18} color={colors.accent} strokeWidth={2.4} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function CalendarPanel({
+  monthDate,
+  onPreviousMonth,
+  onNextMonth,
+  onSelectDate,
+}: {
+  monthDate: Date;
+  onPreviousMonth: () => void;
+  onNextMonth: () => void;
+  onSelectDate: (date: Date) => void;
+}) {
+  const cells = getMonthCells(monthDate);
+  const today = getTodayDate();
+
+  const weekDays = Array.from({ length: 7 }, (_, index) => {
+    return new Date(2026, 0, 4 + index)
+      .toLocaleDateString([], { weekday: "short" })
+      .slice(0, 2);
+  });
+
+  return (
+    <View style={styles.calendarPanel}>
+      <View style={styles.calendarHeader}>
+        <Pressable onPress={onPreviousMonth} style={styles.monthButton}>
+          <AppIcon name="chevronLeft" size={18} color="text" />
+        </Pressable>
+
+        <AppText style={styles.monthTitle}>
+          {monthDate.toLocaleDateString([], {
+            month: "long",
+            year: "numeric",
+          })}
+        </AppText>
+
+        <Pressable onPress={onNextMonth} style={styles.monthButton}>
+          <AppIcon name="chevronRight" size={18} color="text" />
+        </Pressable>
+      </View>
+
+      <View style={styles.weekRow}>
+        {weekDays.map((day, index) => (
+          <AppText key={`${day}-${index}`} style={styles.weekDay}>
+            {day}
+          </AppText>
+        ))}
+      </View>
+
+      <View style={styles.daysGrid}>
+        {cells.map((date, index) => {
+          const disabled = !date || isBeforeToday(date);
+          const isToday =
+            date &&
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear();
+
+          return (
+            <Pressable
+              key={`${date?.toISOString() ?? "empty"}-${index}`}
+              disabled={disabled}
+              onPress={() => date && onSelectDate(date)}
+              style={[
+                styles.dayCell,
+                isToday && styles.todayCell,
+                disabled && styles.disabledDayCell,
+              ]}
+            >
+              <AppText
+                style={[
+                  styles.dayText,
+                  isToday && styles.todayText,
+                  disabled && styles.disabledDayText,
+                ]}
+              >
+                {date ? date.getDate() : ""}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 export function RequestFormSheet({
   type,
@@ -112,19 +256,49 @@ export function RequestFormSheet({
   const [reason, setReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [activeCalendarField, setActiveCalendarField] =
+    useState<CalendarField | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(getTodayDate());
 
   const { createRequest, saving } = useEmployeeRequests();
 
   const activeMeta = type ? meta[type] : null;
-  const todayPlaceholder = getTodayValue();
+  const todayDisplayValue = toDisplayDateValue(getTodayDate());
+
+  useEffect(() => {
+    if (!visible || !type) {
+      return;
+    }
+
+    setSubmitted(false);
+    setFormError(null);
+    setActiveCalendarField(null);
+    setCalendarMonth(getTodayDate());
+    setReason("");
+
+    if (type === "leave") {
+      setPrimary(todayDisplayValue);
+      setSecondary(todayDisplayValue);
+      return;
+    }
+
+    if (type === "wfh") {
+      setPrimary(todayDisplayValue);
+      setSecondary("");
+      return;
+    }
+
+    setPrimary("");
+    setSecondary(todayDisplayValue);
+  }, [visible, type, todayDisplayValue]);
 
   const labels = useMemo(() => {
     if (type === "leave") {
       return {
         primary: t("common.fromDate"),
-        primaryPlaceholder: todayPlaceholder,
+        primaryPlaceholder: todayDisplayValue,
         secondary: t("common.toDate"),
-        secondaryPlaceholder: todayPlaceholder,
+        secondaryPlaceholder: todayDisplayValue,
         reason: t("common.reason"),
         reasonPlaceholder: t("requestForm.leaveType"),
         keyboardType: "default" as const,
@@ -136,7 +310,7 @@ export function RequestFormSheet({
         primary: t("requestForm.loanAmount"),
         primaryPlaceholder: "25000",
         secondary: t("common.date"),
-        secondaryPlaceholder: todayPlaceholder,
+        secondaryPlaceholder: todayDisplayValue,
         reason: t("common.reason"),
         reasonPlaceholder: t("requestForm.loanDesc"),
         keyboardType: "numeric" as const,
@@ -148,7 +322,7 @@ export function RequestFormSheet({
         primary: t("common.title"),
         primaryPlaceholder: t("requestForm.ticketCategory"),
         secondary: t("common.date"),
-        secondaryPlaceholder: todayPlaceholder,
+        secondaryPlaceholder: todayDisplayValue,
         reason: t("common.description"),
         reasonPlaceholder: t("requestForm.ticketDesc"),
         keyboardType: "default" as const,
@@ -157,14 +331,14 @@ export function RequestFormSheet({
 
     return {
       primary: t("requestForm.wfhDate"),
-      primaryPlaceholder: todayPlaceholder,
+      primaryPlaceholder: todayDisplayValue,
       secondary: t("common.title"),
       secondaryPlaceholder: t("requestForm.wfhRequest"),
       reason: t("common.reason"),
       reasonPlaceholder: t("requestForm.wfhDesc"),
       keyboardType: "default" as const,
     };
-  }, [type, todayPlaceholder]);
+  }, [type, todayDisplayValue]);
 
   const resetForm = () => {
     setPrimary("");
@@ -172,6 +346,7 @@ export function RequestFormSheet({
     setReason("");
     setSubmitted(false);
     setFormError(null);
+    setActiveCalendarField(null);
   };
 
   const handleClose = () => {
@@ -179,12 +354,35 @@ export function RequestFormSheet({
     onClose();
   };
 
+  const handleCalendarSelect = (field: CalendarField, date: Date) => {
+    const displayValue = toDisplayDateValue(date);
+
+    if (field === "primary") {
+      setPrimary(displayValue);
+    } else {
+      setSecondary(displayValue);
+    }
+
+    setFormError(null);
+    setActiveCalendarField(null);
+  };
+
+  const moveMonth = (direction: -1 | 1) => {
+    setCalendarMonth((current) => {
+      return new Date(
+        current.getFullYear(),
+        current.getMonth() + direction,
+        1
+      );
+    });
+  };
+
   const validateDate = (value: string) => {
     if (!value.trim()) {
       return t("requestForm.dateRequired");
     }
 
-    const parsed = parseDateInput(value);
+    const parsed = parseDisplayDateInput(value);
 
     if (!parsed) {
       return t("requestForm.invalidDate");
@@ -214,8 +412,8 @@ export function RequestFormSheet({
           return;
         }
 
-        const startDate = parseDateInput(primary);
-        const endDate = parseDateInput(secondary);
+        const startDate = parseDisplayDateInput(primary);
+        const endDate = parseDisplayDateInput(secondary);
 
         if (!startDate || !endDate) {
           setFormError(t("requestForm.invalidDate"));
@@ -230,9 +428,9 @@ export function RequestFormSheet({
         await createRequest({
           type,
           title: t("requests.annualLeave"),
-          description: reason.trim() || null,
-          startDate: toDateValue(startDate),
-          endDate: toDateValue(endDate),
+          description: reason.trim() || undefined,
+          startDate: toDatabaseDateValue(startDate),
+          endDate: toDatabaseDateValue(endDate),
         });
       }
 
@@ -244,7 +442,7 @@ export function RequestFormSheet({
           return;
         }
 
-        const requestDate = parseDateInput(primary);
+        const requestDate = parseDisplayDateInput(primary);
 
         if (!requestDate) {
           setFormError(t("requestForm.invalidDate"));
@@ -254,9 +452,9 @@ export function RequestFormSheet({
         await createRequest({
           type,
           title: secondary.trim() || t("requests.wfhRequest"),
-          description: reason.trim() || null,
-          startDate: toDateValue(requestDate),
-          endDate: toDateValue(requestDate),
+          description: reason.trim() || undefined,
+          startDate: toDatabaseDateValue(requestDate),
+          endDate: toDatabaseDateValue(requestDate),
         });
       }
 
@@ -273,7 +471,7 @@ export function RequestFormSheet({
           return;
         }
 
-        const requestDate = parseDateInput(secondary);
+        const requestDate = parseDisplayDateInput(secondary);
 
         if (!requestDate) {
           setFormError(t("requestForm.invalidDate"));
@@ -286,8 +484,8 @@ export function RequestFormSheet({
           description: reason.trim()
             ? `${t("requestForm.loanAmount")}: ${primary.trim()} · ${reason.trim()}`
             : `${t("requestForm.loanAmount")}: ${primary.trim()}`,
-          startDate: toDateValue(requestDate),
-          endDate: toDateValue(requestDate),
+          startDate: toDatabaseDateValue(requestDate),
+          endDate: toDatabaseDateValue(requestDate),
         });
       }
 
@@ -304,7 +502,7 @@ export function RequestFormSheet({
           return;
         }
 
-        const requestDate = parseDateInput(secondary);
+        const requestDate = parseDisplayDateInput(secondary);
 
         if (!requestDate) {
           setFormError(t("requestForm.invalidDate"));
@@ -314,9 +512,9 @@ export function RequestFormSheet({
         await createRequest({
           type,
           title: primary.trim(),
-          description: reason.trim() || null,
-          startDate: toDateValue(requestDate),
-          endDate: toDateValue(requestDate),
+          description: reason.trim() || undefined,
+          startDate: toDatabaseDateValue(requestDate),
+          endDate: toDatabaseDateValue(requestDate),
         });
       }
 
@@ -326,6 +524,21 @@ export function RequestFormSheet({
         error instanceof Error ? error.message : t("requestForm.submitFailed")
       );
     }
+  };
+
+  const renderCalendarPanel = (field: CalendarField) => {
+    if (activeCalendarField !== field) {
+      return null;
+    }
+
+    return (
+      <CalendarPanel
+        monthDate={calendarMonth}
+        onPreviousMonth={() => moveMonth(-1)}
+        onNextMonth={() => moveMonth(1)}
+        onSelectDate={(date) => handleCalendarSelect(field, date)}
+      />
+    );
   };
 
   if (!activeMeta) return null;
@@ -382,26 +595,102 @@ export function RequestFormSheet({
                 </View>
 
                 <View style={styles.form}>
-                  <AppTextInput
-                    label={labels.primary}
-                    placeholder={labels.primaryPlaceholder}
-                    value={primary}
-                    keyboardType={labels.keyboardType}
-                    onChangeText={(value) => {
-                      setPrimary(value);
-                      setFormError(null);
-                    }}
-                  />
+                  {type === "leave" ? (
+                    <>
+                      <DateInput
+                        label={labels.primary}
+                        placeholder={labels.primaryPlaceholder}
+                        value={primary}
+                        onChangeText={(value) => {
+                          setPrimary(value);
+                          setFormError(null);
+                        }}
+                        onCalendarPress={() =>
+                          setActiveCalendarField((current) =>
+                            current === "primary" ? null : "primary"
+                          )
+                        }
+                      />
+                      {renderCalendarPanel("primary")}
 
-                  <AppTextInput
-                    label={labels.secondary}
-                    placeholder={labels.secondaryPlaceholder}
-                    value={secondary}
-                    onChangeText={(value) => {
-                      setSecondary(value);
-                      setFormError(null);
-                    }}
-                  />
+                      <DateInput
+                        label={labels.secondary}
+                        placeholder={labels.secondaryPlaceholder}
+                        value={secondary}
+                        onChangeText={(value) => {
+                          setSecondary(value);
+                          setFormError(null);
+                        }}
+                        onCalendarPress={() =>
+                          setActiveCalendarField((current) =>
+                            current === "secondary" ? null : "secondary"
+                          )
+                        }
+                      />
+                      {renderCalendarPanel("secondary")}
+                    </>
+                  ) : null}
+
+                  {type === "wfh" ? (
+                    <>
+                      <DateInput
+                        label={labels.primary}
+                        placeholder={labels.primaryPlaceholder}
+                        value={primary}
+                        onChangeText={(value) => {
+                          setPrimary(value);
+                          setFormError(null);
+                        }}
+                        onCalendarPress={() =>
+                          setActiveCalendarField((current) =>
+                            current === "primary" ? null : "primary"
+                          )
+                        }
+                      />
+                      {renderCalendarPanel("primary")}
+
+                      <AppTextInput
+                        label={labels.secondary}
+                        placeholder={labels.secondaryPlaceholder}
+                        value={secondary}
+                        onChangeText={(value) => {
+                          setSecondary(value);
+                          setFormError(null);
+                        }}
+                      />
+                    </>
+                  ) : null}
+
+                  {type === "loan" || type === "ticket" ? (
+                    <>
+                      <AppTextInput
+                        label={labels.primary}
+                        placeholder={labels.primaryPlaceholder}
+                        value={primary}
+                        keyboardType={labels.keyboardType}
+                        onChangeText={(value) => {
+                          setPrimary(value);
+                          setFormError(null);
+                        }}
+                      />
+
+                      <DateInput
+                        label={labels.secondary}
+                        placeholder={labels.secondaryPlaceholder}
+                        value={secondary}
+                        onChangeText={(value) => {
+                          setSecondary(value);
+                          setFormError(null);
+                        }}
+                        onCalendarPress={() =>
+                          setActiveCalendarField((current) =>
+                            current === "secondary" ? null : "secondary"
+                          )
+                        }
+                      />
+                      {renderCalendarPanel("secondary")}
+                    </>
+                  ) : null}
 
                   <AppTextInput
                     label={labels.reason}
@@ -422,10 +711,7 @@ export function RequestFormSheet({
                   )}
                 </View>
 
-                <AppButton
-                  title={saving ? t("common.saving") : t("common.submit")}
-                  onPress={handleSubmit}
-                />
+                <AppButton title={t("common.submit")} onPress={handleSubmit} />
               </>
             )}
           </View>
@@ -496,6 +782,100 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
+  dateInputWrap: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 14,
+    paddingRight: 8,
+  },
+  dateInput: {
+    flex: 1,
+    height: 52,
+    color: colors.text,
+    fontSize: 15,
+    fontFamily: "Manrope_500Medium",
+    outlineStyle: "none" as never,
+  },
+  calendarButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarPanel: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.xl,
+    padding: 12,
+    gap: 10,
+    marginTop: -6,
+  },
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  monthButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  weekRow: {
+    flexDirection: "row",
+  },
+  weekDay: {
+    flex: 1,
+    textAlign: "center",
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  daysGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  dayCell: {
+    width: `${100 / 7}%`,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayCell: {
+    borderRadius: 19,
+    backgroundColor: colors.accent,
+  },
+  disabledDayCell: {
+    opacity: 0.35,
+  },
+  dayText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  todayText: {
+    color: colors.inverseText,
+  },
+  disabledDayText: {
+    color: colors.textMuted,
   },
   errorBox: {
     backgroundColor: colors.dangerSoft,

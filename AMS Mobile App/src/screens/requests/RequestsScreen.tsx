@@ -49,13 +49,7 @@ const formatDate = (value: string | null | undefined) => {
 
   if (parts.length === 3) {
     const [year, month, day] = parts.map(Number);
-    const date = new Date(year, month - 1, day);
-
-    return date.toLocaleDateString([], {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year}`;
   }
 
   const date = new Date(value);
@@ -64,11 +58,7 @@ const formatDate = (value: string | null | undefined) => {
     return value;
   }
 
-  return date.toLocaleDateString([], {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 };
 
 export function RequestsScreen({
@@ -133,7 +123,7 @@ export function RequestsScreen({
             <AppText style={styles.statusTitle}>{t("requests.createRequest")}</AppText>
             <AppText style={styles.statusSubtitle}>
               {enabledRequestTypes.length > 0
-                ? t("requests.createFromPlus")
+                ? t("requests.subtitle")
                 : t("requests.noRequestModules")}
             </AppText>
           </View>
@@ -229,7 +219,7 @@ export function RequestsScreen({
                     {t("requests.createRequest")}
                   </AppText>
                   <AppText style={styles.pickerSubtitle}>
-                    {t("requests.chooseRequestType")}
+                    {t("requests.subtitle")}
                   </AppText>
                 </View>
 

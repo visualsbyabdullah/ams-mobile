@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontWeight: "700",
     color: colors.accent,
-  },,
+  },
   salesArrow: {
     width: 32,
     height: 32,
@@ -566,4 +566,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 10,
   },
+
 });

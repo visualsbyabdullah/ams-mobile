@@ -183,7 +183,10 @@ export function EmployeeHomeScreen({
 
       {salesEnabled && (
         <Pressable
-          style={styles.salesCard}
+          style={({ pressed }) => [
+            styles.salesCard,
+            pressed && styles.salesCardPressed,
+          ]}
           onPress={() => setSalesSheetVisible(true)}
         >
           <View style={styles.salesIconWrap}>
@@ -191,16 +194,27 @@ export function EmployeeHomeScreen({
           </View>
 
           <View style={styles.salesTextWrap}>
-            <AppText style={styles.salesTitle}>{t("sales.homeTitle")}</AppText>
+            <View style={styles.salesTitleRow}>
+              <AppText style={styles.salesTitle}>{t("sales.homeTitle")}</AppText>
+
+              <View style={styles.salesBadge}>
+                <AppText style={styles.salesBadgeText}>
+                  {t("sales.assigned")}
+                </AppText>
+              </View>
+            </View>
+
             <AppText style={styles.salesSubtitle}>
               {t("sales.homeSubtitle")}
             </AppText>
+
+            <AppText style={styles.salesHint}>
+              {t("sales.tapToOpen")}
+            </AppText>
           </View>
 
-          <View style={styles.salesBadge}>
-            <AppText style={styles.salesBadgeText}>
-              {t("sales.assigned")}
-            </AppText>
+          <View style={styles.salesArrow}>
+            <AppIcon name="chevronRight" size={17} color="textMuted" />
           </View>
         </Pressable>
       )}
@@ -490,6 +504,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  salesCardPressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.99 }],
+  },
   salesIconWrap: {
     width: 44,
     height: 44,
@@ -501,6 +519,12 @@ const styles = StyleSheet.create({
   },
   salesTextWrap: {
     flex: 1,
+  },
+  salesTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 2,
   },
   salesTitle: {
     fontSize: 15,
@@ -514,16 +538,32 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: colors.textMuted,
   },
+  salesHint: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "700",
+    color: colors.accent,
+    marginTop: 4,
+  },
   salesBadge: {
     borderRadius: 999,
     backgroundColor: colors.accentSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   salesBadgeText: {
     fontSize: 11,
     lineHeight: 14,
     fontWeight: "700",
     color: colors.accent,
+  },,
+  salesArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
   },
 });

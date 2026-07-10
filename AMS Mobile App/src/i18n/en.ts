@@ -451,4 +451,5 @@ export const en = {
   "sales.saleEntry": "Sale entry",
   "sales.customer": "Customer",
   "sales.preciseLocationVerified": "Precise location verified",
+  "sales.tapToOpen": "Tap to open",
 };

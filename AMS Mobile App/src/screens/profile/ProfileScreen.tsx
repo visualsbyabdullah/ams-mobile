@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppIcon, IconName } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
-import { employeeProfile } from "../../features/profile/mockProfile";
+import { useEmployeeSession } from "../../features/session";
 import {
   canUseDeviceAttendance,
   canUsePayroll,
@@ -118,6 +118,32 @@ export function ProfileScreen({
   const payrollEnabled = canUsePayroll(policy);
   const deviceAttendanceEnabled = canUseDeviceAttendance(policy);
 
+  const { employeeBundle } = useEmployeeSession();
+
+  const employee = employeeBundle?.employee;
+  const organization = employeeBundle?.organization;
+  const branch = employeeBundle?.branch;
+  const payrollProfile = employeeBundle?.payrollProfile;
+
+  const emptyValue = "-";
+  const employeeName = employee?.full_name ?? emptyValue;
+  const employeeEmail = employee?.email ?? emptyValue;
+  const employeeCode = employee?.employee_code ?? emptyValue;
+  const employeePhone = employee?.phone ?? emptyValue;
+  const employeeDesignation = employee?.designation ?? emptyValue;
+  const employeeDepartment = employee?.department ?? emptyValue;
+  const organizationName = organization?.name ?? emptyValue;
+  const branchName = branch?.name ?? emptyValue;
+  const dateOfBirth = employee?.date_of_birth ?? emptyValue;
+  const cnic = employee?.cnic ?? emptyValue;
+  const address = employee?.address ?? emptyValue;
+  const city = employee?.city ?? emptyValue;
+
+  const bankName = payrollProfile?.bank_name ?? emptyValue;
+  const accountTitle = payrollProfile?.account_title ?? emptyValue;
+  const accountNo = payrollProfile?.account_no ?? emptyValue;
+  const accountType = payrollProfile?.account_type ?? emptyValue;
+
   const workingDays = getWorkingDays(policy)
     .map((day) => t(`days.${day}`))
     .join(", ");
@@ -126,13 +152,13 @@ export function ProfileScreen({
     {
       key: "email",
       label: t("profile.email"),
-      value: employeeProfile.email,
+      value: employeeEmail,
       icon: "mail",
     },
     {
       key: "phone",
       label: t("profile.phone"),
-      value: employeeProfile.phone,
+      value: employeePhone,
       icon: "phone",
       tone: "orange",
     },
@@ -142,20 +168,33 @@ export function ProfileScreen({
     {
       key: "employeeId",
       label: t("profile.employeeId"),
-      value: employeeProfile.employeeId,
+      value: employeeCode,
       icon: "card",
+    },
+    {
+      key: "organization",
+      label: t("profile.organization"),
+      value: organizationName,
+      icon: "building",
+    },
+    {
+      key: "designation",
+      label: t("profile.designation"),
+      value: employeeDesignation,
+      icon: "work",
+      tone: "info",
     },
     {
       key: "department",
       label: t("profile.department"),
-      value: employeeProfile.department,
+      value: employeeDepartment,
       icon: "work",
       tone: "info",
     },
     {
       key: "branch",
       label: t("profile.branch"),
-      value: employeeProfile.branch,
+      value: branchName,
       icon: "building",
     },
     {
@@ -184,27 +223,27 @@ export function ProfileScreen({
     {
       key: "dob",
       label: t("profile.dateOfBirth"),
-      value: employeeProfile.dateOfBirth,
+      value: dateOfBirth,
       icon: "calendar",
     },
     {
       key: "cnic",
       label: t("profile.cnic"),
-      value: employeeProfile.cnic,
+      value: cnic,
       icon: "badge",
       tone: "orange",
     },
     {
       key: "address",
       label: t("profile.address"),
-      value: employeeProfile.address,
+      value: address,
       icon: "location",
       tone: "info",
     },
     {
       key: "city",
       label: t("profile.city"),
-      value: employeeProfile.city,
+      value: city,
       icon: "building",
     },
   ];
@@ -213,27 +252,27 @@ export function ProfileScreen({
     {
       key: "bankName",
       label: t("profile.bankName"),
-      value: employeeProfile.bankName,
+      value: bankName,
       icon: "bank",
     },
     {
       key: "accountTitle",
       label: t("profile.accountTitle"),
-      value: employeeProfile.accountTitle,
+      value: accountTitle,
       icon: "user",
       tone: "info",
     },
     {
       key: "accountNo",
       label: t("profile.accountNo"),
-      value: employeeProfile.accountNo,
+      value: accountNo,
       icon: "card",
       tone: "orange",
     },
     {
       key: "accountType",
       label: t("profile.accountType"),
-      value: employeeProfile.accountType,
+      value: accountType,
       icon: "bank",
     },
   ];
@@ -309,12 +348,12 @@ export function ProfileScreen({
         </View>
 
         <View style={styles.headerTextWrap}>
-          <AppText style={styles.employeeName}>{employeeProfile.name}</AppText>
-          <AppText style={styles.employeeEmail}>{employeeProfile.email}</AppText>
+          <AppText style={styles.employeeName}>{employeeName}</AppText>
+          <AppText style={styles.employeeEmail}>{employeeEmail}</AppText>
 
           <View style={styles.rolePill}>
             <AppIcon name="shield" size={14} color="accent" />
-            <AppText style={styles.roleText}>{employeeProfile.designation}</AppText>
+            <AppText style={styles.roleText}>{employeeDesignation}</AppText>
           </View>
         </View>
       </View>
@@ -322,14 +361,14 @@ export function ProfileScreen({
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
           <AppText style={styles.summaryLabel}>{t("profile.employeeId")}</AppText>
-          <AppText style={styles.summaryValue}>{employeeProfile.employeeId}</AppText>
+          <AppText style={styles.summaryValue}>{employeeCode}</AppText>
         </View>
 
         <View style={styles.summaryDivider} />
 
         <View style={styles.summaryItem}>
           <AppText style={styles.summaryLabel}>{t("profile.branch")}</AppText>
-          <AppText style={styles.summaryValue}>{employeeProfile.branch}</AppText>
+          <AppText style={styles.summaryValue}>{branchName}</AppText>
         </View>
       </View>
 

@@ -487,4 +487,6 @@ export const en = {
   "auth.resetEmailRateLimited": "Too many reset emails were requested. Please wait and try again later.",
   "auth.resetEmailNote": "The reset link will be sent to your registered login email.",
   "auth.emailPlaceholder": "Enter registered email",
+  "profile.organization": "Organization",
+  "profile.designation": "Designation",
 };

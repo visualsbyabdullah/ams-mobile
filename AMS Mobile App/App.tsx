@@ -8,23 +8,38 @@ import {
   useFonts,
 } from "@expo-google-fonts/manrope";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { AppNavigator } from "./src/navigation/AppNavigator";
-import { EmployeeSessionProvider, useEmployeeSession } from "./src/features/session";
-import { AuthUser } from "./src/features/auth/mockAuth";
-import { LoginScreen } from "./src/screens/auth/LoginScreen";
+
 import { ResetPasswordSheet } from "./src/components/auth/ResetPasswordSheet";
 import { logoutEmployee } from "./src/features/auth/employeeAuthService";
+import { AuthUser } from "./src/features/auth/mockAuth";
 import {
   clearAuthSession,
-  getSavedAuthSession,
   saveAuthSession,
 } from "./src/features/auth/authStorage";
-import { colors } from "./src/theme";
+import {
+  EmployeeSessionProvider,
+  useEmployeeSession,
+} from "./src/features/session";
 import { installWebFocusReset } from "./src/lib/installWebFocusReset";
 import { supabase } from "./src/lib/supabase";
+import { AppNavigator } from "./src/navigation/AppNavigator";
+import { LoginScreen } from "./src/screens/auth/LoginScreen";
+import { colors } from "./src/theme";
+
+const toAuthUser = (id: string, email: string): AuthUser => {
+  return {
+    id,
+    name: email.split("@")[0],
+    email,
+    role: "employee",
+    organizationId: "",
+    branchId: "",
+  };
+};
 
 function AppShell() {
   installWebFocusReset();
+
   const {
     employeeBundle,
     resolvedPolicy,
@@ -33,9 +48,17 @@ function AppShell() {
     loadingEmployeeBundle,
     employeeBundleError,
   } = useEmployeeSession();
+
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+  });
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -52,43 +75,31 @@ function AppShell() {
   useEffect(() => {
     let mounted = true;
 
-    getSavedAuthSession()
-      .then((savedUser) => {
-        if (!mounted) return;
+    const bootSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user;
 
-        if (savedUser) {
-          setUser(savedUser);
-        }
-      })
-      .finally(() => {
-        if (mounted) {
-          setAuthReady(true);
-        }
-      });
+      if (!mounted) {
+        return;
+      }
+
+      if (sessionUser?.email) {
+        setUser(toAuthUser(sessionUser.id, sessionUser.email));
+      } else {
+        await clearAuthSession();
+        clearEmployeeBundle();
+        setUser(null);
+      }
+
+      setAuthReady(true);
+    };
+
+    void bootSession();
 
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const handleLogin = async (nextUser: AuthUser, rememberMe: boolean) => {
-    await loadEmployeeBundle(nextUser.email, nextUser.id);
-    setUser(nextUser);
-    await saveAuthSession(nextUser, rememberMe);
-  };
-
-  const handleLogout = async () => {
-    clearEmployeeBundle();
-    await logoutEmployee();
-    await clearAuthSession();
-    setUser(null);
-  };
-  const [fontsLoaded] = useFonts({
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_700Bold,
-  });
+  }, [clearEmployeeBundle]);
 
   useEffect(() => {
     if (
@@ -105,21 +116,39 @@ function AppShell() {
   }, [
     authReady,
     user?.email,
+    user?.id,
     employeeBundle,
     loadingEmployeeBundle,
     employeeBundleError,
+    loadEmployeeBundle,
   ]);
 
-  if (!fontsLoaded) {
+  const handleLogin = async (nextUser: AuthUser, rememberMe: boolean) => {
+    const loadedBundle = await loadEmployeeBundle(nextUser.email, nextUser.id);
+
+    if (!loadedBundle) {
+      await logoutEmployee();
+      await clearAuthSession();
+      throw new Error("EMPLOYEE_PROFILE_NOT_LOADED");
+    }
+
+    setUser(nextUser);
+    await saveAuthSession(nextUser, rememberMe);
+  };
+
+  const handleLogout = async () => {
+    clearEmployeeBundle();
+    await logoutEmployee();
+    await clearAuthSession();
+    setUser(null);
+  };
+
+  if (!fontsLoaded || !authReady) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator color={colors.primary} />
       </View>
     );
-  }
-
-  if (!authReady) {
-    return null;
   }
 
   if (!user) {

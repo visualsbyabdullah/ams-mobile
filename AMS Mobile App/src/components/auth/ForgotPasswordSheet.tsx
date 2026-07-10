@@ -47,10 +47,15 @@ export const ForgotPasswordSheet = ({
       await sendPasswordResetEmail(resetEmail);
       setSent(true);
     } catch (resetError) {
-      setError(
+      const message =
         resetError instanceof Error
           ? resetError.message
-          : t("auth.resetEmailFailed")
+          : t("auth.resetEmailFailed");
+
+      setError(
+        message.toLowerCase().includes("rate limit")
+          ? t("auth.resetEmailRateLimited")
+          : message
       );
     } finally {
       setSending(false);

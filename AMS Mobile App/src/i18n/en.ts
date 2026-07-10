@@ -478,4 +478,13 @@ export const en = {
   "auth.updatePassword": "Update password",
   "auth.passwordUpdated": "Password updated successfully. You can now login with your new password.",
   "common.done": "Done",
+  "auth.forgotTitle": "Reset password",
+  "auth.forgotSubtitle": "Enter your registered email to receive a password reset link.",
+  "auth.sendResetEmail": "Send reset email",
+  "auth.sendingResetEmail": "Sending...",
+  "auth.resetEmailSent": "Password reset email sent. Check your inbox.",
+  "auth.resetEmailFailed": "Unable to send reset email.",
+  "auth.resetEmailRateLimited": "Too many reset emails were requested. Please wait and try again later.",
+  "auth.resetEmailNote": "The reset link will be sent to your registered login email.",
+  "auth.emailPlaceholder": "Enter registered email",
 };

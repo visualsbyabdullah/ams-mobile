@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: colors.textMuted,
     fontWeight: "700",
-  },,
+  },
   loginButtonDisabled: {
     opacity: 0.55,
   },

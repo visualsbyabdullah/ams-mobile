@@ -1,8 +1,5 @@
 import { supabase } from "../../lib/supabase";
-import {
-  AuthUser,
-  authenticateMockEmployee,
-} from "./mockAuth";
+import { AuthUser } from "./mockAuth";
 
 const toAuthUser = (id: string, email: string): AuthUser => {
   return {
@@ -26,17 +23,11 @@ export const loginEmployee = async (
     password,
   });
 
-  if (!error && data.user?.email) {
-    return toAuthUser(data.user.id, data.user.email);
+  if (error || !data.user?.email) {
+    throw new Error("INVALID_CREDENTIALS");
   }
 
-  const mockUser = authenticateMockEmployee(normalizedEmail, password);
-
-  if (mockUser) {
-    return mockUser;
-  }
-
-  throw new Error("INVALID_CREDENTIALS");
+  return toAuthUser(data.user.id, data.user.email);
 };
 
 export const logoutEmployee = async () => {

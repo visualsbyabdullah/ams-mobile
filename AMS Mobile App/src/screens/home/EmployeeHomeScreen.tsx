@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppIcon, IconName } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
 import { SalesModuleSheet } from "../../components/sales/SalesModuleSheet";
+import { useHomeDashboard } from "../../features/home";
 import {
   canRequestWfh,
   canUseSales,
@@ -88,6 +89,40 @@ const toneStyles: Record<SnapshotTone, ToneStyle> = {
   },
 };
 
+
+const formatCount = (value: number | null | undefined) => {
+  return String(value ?? 0).padStart(2, "0");
+};
+
+const formatShortDate = (value: string | null | undefined) => {
+  if (!value) {
+    return "-";
+  }
+
+  const parts = value.split("-");
+
+  if (parts.length === 3) {
+    const [year, month, day] = parts.map(Number);
+    const date = new Date(year, month - 1, day);
+
+    return date.toLocaleDateString([], {
+      day: "2-digit",
+      month: "short",
+    });
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short",
+  });
+};
+
 export function EmployeeHomeScreen({
   policy,
   onMenuPress,
@@ -95,9 +130,42 @@ export function EmployeeHomeScreen({
 }: EmployeeHomeScreenProps) {
   const [salesSheetVisible, setSalesSheetVisible] = useState(false);
 
+  const { data: homeDashboard } = useHomeDashboard();
+
   const notificationsEnabled = isModuleEnabled(policy, "notifications");
   const wfhEnabled = canRequestWfh(policy);
   const salesEnabled = canUseSales(policy);
+
+  const todayCheckIn = homeDashboard?.todayCheckIn ?? "--:--";
+  const todayCheckOut = homeDashboard?.todayCheckOut ?? "--:--";
+
+  const currentSnapshotItems = snapshotItems.map((item) => {
+    if (item.key === "requests") {
+      return {
+        ...item,
+        value: formatCount(homeDashboard?.pendingRequestsCount),
+      };
+    }
+
+    if (item.key === "salary") {
+      return {
+        ...item,
+        value: formatShortDate(homeDashboard?.latestSalaryDate),
+      };
+    }
+
+    if (item.key === "attendance") {
+      return {
+        ...item,
+        value:
+          typeof homeDashboard?.attendanceRate === "number"
+            ? `${homeDashboard.attendanceRate}%`
+            : "-",
+      };
+    }
+
+    return item;
+  });
   const salesPolicy = policy.modules.sales;
 
   return (
@@ -165,12 +233,12 @@ export function EmployeeHomeScreen({
         <View style={styles.checkRow}>
           <View style={[styles.checkBox, styles.checkInBox]}>
             <AppText style={styles.checkLabel}>{t("home.checkInLabel")}</AppText>
-            <AppText style={styles.checkValue}>09:08</AppText>
+            <AppText style={styles.checkValue}>{todayCheckIn}</AppText>
           </View>
 
           <View style={styles.checkBox}>
             <AppText style={styles.checkLabel}>{t("home.checkOutLabel")}</AppText>
-            <AppText style={styles.checkValueMuted}>--:--</AppText>
+            <AppText style={styles.checkValueMuted}>{todayCheckOut}</AppText>
           </View>
         </View>
 
@@ -224,7 +292,7 @@ export function EmployeeHomeScreen({
       </View>
 
       <View style={styles.snapshotList}>
-        {snapshotItems.map((item) => {
+        {currentSnapshotItems.map((item) => {
           const tone = toneStyles[item.tone];
 
           return (

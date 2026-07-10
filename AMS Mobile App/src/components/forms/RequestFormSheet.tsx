@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
-import { Calendar } from "lucide-react-native";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { RequestType } from "../../features/requests/types";
 import { useEmployeeRequests } from "../../features/requests";
 import { t } from "../../i18n";
@@ -186,7 +186,7 @@ function CalendarPanel({
     <View style={styles.calendarPanel}>
       <View style={styles.calendarHeader}>
         <Pressable onPress={onPreviousMonth} style={styles.monthButton}>
-          <AppIcon name="chevronLeft" size={18} color="text" />
+          <ChevronLeft size={18} color={colors.text} strokeWidth={2.4} />
         </Pressable>
 
         <AppText style={styles.monthTitle}>
@@ -197,7 +197,7 @@ function CalendarPanel({
         </AppText>
 
         <Pressable onPress={onNextMonth} style={styles.monthButton}>
-          <AppIcon name="chevronRight" size={18} color="text" />
+          <ChevronRight size={18} color={colors.text} strokeWidth={2.4} />
         </Pressable>
       </View>
 

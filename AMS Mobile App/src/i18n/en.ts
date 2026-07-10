@@ -452,4 +452,9 @@ export const en = {
   "sales.customer": "Customer",
   "sales.preciseLocationVerified": "Precise location verified",
   "sales.tapToOpen": "Tap to open",
+  "sales.totalEntries": "Total entries",
+  "sales.totalAmount": "Total amount",
+  "sales.salesCountShort": "sales",
+  "sales.currentEmployee": "Current employee",
+  "sales.entriesLoadFailed": "Unable to load sales entries.",
 };

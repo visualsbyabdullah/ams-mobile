@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "../ui/AppIcon";
@@ -7,7 +7,6 @@ import { SalesEntryFormSheet } from "./SalesEntryFormSheet";
 import { useEmployeeSession } from "../../features/session";
 import {
   canCreateSaleEntry,
-  canViewBranchSales,
   canViewOwnSales,
 } from "../../features/policies/guards";
 import { getOwnSalesEntries, SalesEntry } from "../../features/sales";
@@ -19,9 +18,9 @@ type SalesModuleSheetProps = {
   onClose: () => void;
 };
 
-const formatAmount = (amount: number | null) => {
-  if (amount === null) {
-    return "-";
+const formatAmount = (amount: number | null | undefined) => {
+  if (!amount) {
+    return "PKR 0";
   }
 
   return `PKR ${amount.toLocaleString()}`;
@@ -50,7 +49,14 @@ export const SalesModuleSheet = ({
 
   const canCreate = canCreateSaleEntry(resolvedPolicy);
   const canViewOwn = canViewOwnSales(resolvedPolicy);
-  const canViewBranch = canViewBranchSales(resolvedPolicy);
+
+  const totalSalesCount = useMemo(() => {
+    return entries.reduce((sum, entry) => sum + entry.sales_count, 0);
+  }, [entries]);
+
+  const totalAmount = useMemo(() => {
+    return entries.reduce((sum, entry) => sum + (entry.amount ?? 0), 0);
+  }, [entries]);
 
   const loadEntries = async () => {
     if (!employeeBundle || !canViewOwn) {
@@ -66,7 +72,7 @@ export const SalesModuleSheet = ({
       setEntries(nextEntries);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to load sales entries.";
+        error instanceof Error ? error.message : t("sales.entriesLoadFailed");
 
       setEntriesError(message);
       setEntries([]);
@@ -114,35 +120,26 @@ export const SalesModuleSheet = ({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.permissionCard}>
-              <AppText style={styles.sectionTitle}>
-                {t("sales.permissionsTitle")}
-              </AppText>
-
-              <View style={styles.permissionRow}>
-                <AppText style={styles.permissionLabel}>
-                  {t("sales.createSaleEntry")}
+            <View style={styles.metricsRow}>
+              <View style={styles.metricCard}>
+                <AppText style={styles.metricLabel}>
+                  {t("sales.totalEntries")}
                 </AppText>
-                <AppText style={styles.permissionValue}>
-                  {canCreate ? t("common.enabled") : t("common.disabled")}
+                <AppText style={styles.metricValue}>{entries.length}</AppText>
+                <AppText style={styles.metricSubValue}>
+                  {totalSalesCount} {t("sales.salesCountShort")}
                 </AppText>
               </View>
 
-              <View style={styles.permissionRow}>
-                <AppText style={styles.permissionLabel}>
-                  {t("sales.viewOwnSales")}
+              <View style={styles.metricCard}>
+                <AppText style={styles.metricLabel}>
+                  {t("sales.totalAmount")}
                 </AppText>
-                <AppText style={styles.permissionValue}>
-                  {canViewOwn ? t("common.enabled") : t("common.disabled")}
+                <AppText style={styles.metricValueSmall}>
+                  {formatAmount(totalAmount)}
                 </AppText>
-              </View>
-
-              <View style={styles.permissionRow}>
-                <AppText style={styles.permissionLabel}>
-                  {t("sales.viewBranchSales")}
-                </AppText>
-                <AppText style={styles.permissionValue}>
-                  {canViewBranch ? t("common.enabled") : t("common.disabled")}
+                <AppText style={styles.metricSubValue}>
+                  {t("sales.currentEmployee")}
                 </AppText>
               </View>
             </View>
@@ -155,6 +152,7 @@ export const SalesModuleSheet = ({
                 !canCreate && styles.primaryButtonDisabled,
               ]}
             >
+              <AppIcon name="request" size={17} color="inverseText" />
               <AppText style={styles.primaryButtonText}>
                 {t("sales.addSaleEntry")}
               </AppText>
@@ -189,33 +187,39 @@ export const SalesModuleSheet = ({
             {entries.map((entry) => (
               <View key={entry.id} style={styles.entryCard}>
                 <View style={styles.entryTopRow}>
-                  <AppText style={styles.entryTitle}>
-                    {entry.product_or_service || t("sales.saleEntry")}
-                  </AppText>
+                  <View style={styles.entryIconWrap}>
+                    <AppIcon name="request" size={15} color="accent" />
+                  </View>
+
+                  <View style={styles.entryMain}>
+                    <AppText style={styles.entryTitle}>
+                      {entry.product_or_service || t("sales.saleEntry")}
+                    </AppText>
+
+                    <AppText style={styles.entryMeta}>
+                      {formatDateTime(entry.sale_time)}
+                    </AppText>
+                  </View>
 
                   <AppText style={styles.entryAmount}>
                     {formatAmount(entry.amount)}
                   </AppText>
                 </View>
 
-                <AppText style={styles.entryMeta}>
-                  {t("sales.salesCount")}: {entry.sales_count}
-                </AppText>
-
-                {entry.customer_name && (
+                <View style={styles.entryFooter}>
                   <AppText style={styles.entryMeta}>
-                    {t("sales.customer")}: {entry.customer_name}
+                    {t("sales.salesCount")}: {entry.sales_count}
                   </AppText>
-                )}
 
-                <AppText style={styles.entryMeta}>
-                  {formatDateTime(entry.sale_time)}
-                </AppText>
+                  {entry.customer_name && (
+                    <AppText style={styles.entryMeta}>
+                      {t("sales.customer")}: {entry.customer_name}
+                    </AppText>
+                  )}
+                </View>
 
-                {entry.precise_location_verified && (
-                  <AppText style={styles.locationVerified}>
-                    {t("sales.preciseLocationVerified")}
-                  </AppText>
+                {entry.notes && (
+                  <AppText style={styles.entryNotes}>{entry.notes}</AppText>
                 )}
               </View>
             ))}
@@ -301,36 +305,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  permissionCard: {
+  metricsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 14,
+  },
+  metricCard: {
+    flex: 1,
     borderRadius: 22,
     backgroundColor: colors.surfaceSoft,
-    padding: 16,
-    gap: 12,
-    marginBottom: 16,
+    padding: 14,
   },
-  sectionTitle: {
-    fontSize: 14,
-    lineHeight: 20,
+  metricLabel: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "700",
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
+  metricValue: {
+    fontSize: 26,
+    lineHeight: 32,
     fontWeight: "800",
     color: colors.text,
   },
-  permissionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  permissionLabel: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textMuted,
-  },
-  permissionValue: {
-    fontSize: 12,
-    lineHeight: 16,
+  metricValueSmall: {
+    fontSize: 16,
+    lineHeight: 24,
     fontWeight: "800",
+    color: colors.text,
+  },
+  metricSubValue: {
+    fontSize: 11,
+    lineHeight: 15,
     color: colors.accent,
+    marginTop: 4,
   },
   primaryButton: {
     height: 52,
@@ -338,6 +347,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
     marginBottom: 18,
   },
   primaryButtonDisabled: {
@@ -354,6 +365,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "800",
+    color: colors.text,
   },
   refreshText: {
     fontSize: 12,
@@ -388,12 +405,21 @@ const styles = StyleSheet.create({
   entryTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 6,
+    gap: 10,
+    marginBottom: 10,
+  },
+  entryIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  entryMain: {
+    flex: 1,
   },
   entryTitle: {
-    flex: 1,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "800",
@@ -405,16 +431,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.accent,
   },
+  entryFooter: {
+    gap: 2,
+  },
   entryMeta: {
     fontSize: 12,
     lineHeight: 18,
     color: colors.textMuted,
   },
-  locationVerified: {
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: "800",
-    color: colors.accent,
-    marginTop: 6,
+  entryNotes: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.text,
+    marginTop: 8,
   },
 });

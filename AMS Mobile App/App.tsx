@@ -12,6 +12,7 @@ import { AppNavigator } from "./src/navigation/AppNavigator";
 import { EmployeeSessionProvider, useEmployeeSession } from "./src/features/session";
 import { AuthUser } from "./src/features/auth/mockAuth";
 import { LoginScreen } from "./src/screens/auth/LoginScreen";
+import { logoutEmployee } from "./src/features/auth/employeeAuthService";
 import {
   clearAuthSession,
   getSavedAuthSession,
@@ -61,6 +62,7 @@ function AppShell() {
 
   const handleLogout = async () => {
     clearEmployeeBundle();
+    await logoutEmployee();
     await clearAuthSession();
     setUser(null);
   };

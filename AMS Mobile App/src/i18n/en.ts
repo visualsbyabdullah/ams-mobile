@@ -457,4 +457,5 @@ export const en = {
   "sales.salesCountShort": "sales",
   "sales.currentEmployee": "Current employee",
   "sales.entriesLoadFailed": "Unable to load sales entries.",
+  "auth.loggingIn": "Logging in...",
 };

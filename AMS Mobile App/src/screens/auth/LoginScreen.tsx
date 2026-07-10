@@ -9,7 +9,8 @@ import {
 import { ForgotPasswordSheet } from "../../components/auth/ForgotPasswordSheet";
 import { AppIcon } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
-import { AuthUser, authenticateMockEmployee, mockEmployeeCredentials } from "../../features/auth/mockAuth";
+import { AuthUser, mockEmployeeCredentials } from "../../features/auth/mockAuth";
+import { loginEmployee } from "../../features/auth/employeeAuthService";
 import { t } from "../../i18n";
 import { colors, fontFamily } from "../../theme";
 
@@ -23,18 +24,21 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [rememberMe, setRememberMe] = useState(true);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [forgotVisible, setForgotVisible] = useState(false);
 
   const submitLogin = async () => {
-    const authenticatedUser = authenticateMockEmployee(email, password);
-
-    if (!authenticatedUser) {
-      setErrorVisible(true);
-      return;
-    }
-
+    setLoggingIn(true);
     setErrorVisible(false);
-    await onLogin(authenticatedUser, rememberMe);
+
+    try {
+      const authenticatedUser = await loginEmployee(email, password);
+      await onLogin(authenticatedUser, rememberMe);
+    } catch {
+      setErrorVisible(true);
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
   return (
@@ -126,8 +130,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </Pressable>
         </View>
 
-        <Pressable onPress={submitLogin} style={styles.loginButton}>
-          <AppText style={styles.loginButtonText}>{t("auth.login")}</AppText>
+        <Pressable
+          onPress={submitLogin}
+          disabled={loggingIn}
+          style={[styles.loginButton, loggingIn && styles.loginButtonDisabled]}
+        >
+          <AppText style={styles.loginButtonText}>
+            {loggingIn ? t("auth.loggingIn") : t("auth.login")}
+          </AppText>
           <AppIcon name="chevronRight" size={18} color="inverseText" />
         </Pressable>
       </View>
@@ -365,5 +375,8 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: colors.textMuted,
     fontWeight: "700",
+  },,
+  loginButtonDisabled: {
+    opacity: 0.55,
   },
 });

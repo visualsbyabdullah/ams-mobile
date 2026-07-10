@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { sendPasswordResetEmail } from "../../features/auth/employeeAuthService";
@@ -23,8 +23,15 @@ export const ForgotPasswordSheet = ({
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (visible) {
+      setResetEmail(email);
+      setSent(false);
+      setError(null);
+    }
+  }, [visible, email]);
+
   const handleClose = () => {
-    setResetEmail(email);
     setSending(false);
     setSent(false);
     setError(null);
@@ -85,11 +92,13 @@ export const ForgotPasswordSheet = ({
 
             <View style={styles.inputWrap}>
               <AppIcon name="mail" size={18} color="textMuted" />
+
               <TextInput
                 value={resetEmail}
                 onChangeText={setResetEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoCorrect={false}
                 placeholder={t("auth.emailPlaceholder")}
                 placeholderTextColor={colors.textSoft}
                 style={styles.input}
@@ -126,9 +135,7 @@ export const ForgotPasswordSheet = ({
             </AppText>
           </Pressable>
 
-          <AppText style={styles.note}>
-            {t("auth.resetEmailNote")}
-          </AppText>
+          <AppText style={styles.note}>{t("auth.resetEmailNote")}</AppText>
         </View>
       </View>
     </Modal>
@@ -211,9 +218,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   inputWrap: {
-    minHeight: 52,
+    minHeight: 54,
     borderRadius: 20,
     backgroundColor: colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,

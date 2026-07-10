@@ -14,7 +14,7 @@ import { t } from "../../i18n";
 import { colors, fontFamily } from "../../theme";
 
 type LoginScreenProps = {
-  onLogin: (user: AuthUser, rememberMe: boolean) => void;
+  onLogin: (user: AuthUser, rememberMe: boolean) => void | Promise<void>;
 };
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
@@ -25,19 +25,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [errorVisible, setErrorVisible] = useState(false);
   const [forgotVisible, setForgotVisible] = useState(false);
 
-  const submitLogin = () => {
-    const emailMatches =
-      email.trim().toLowerCase() === mockEmployeeCredentials.email;
+  const submitLogin = async () => {
+    const authenticatedUser = authenticateMockEmployee(email, password);
 
-    const passwordMatches = password === mockEmployeeCredentials.password;
-
-    if (!emailMatches || !passwordMatches) {
+    if (!authenticatedUser) {
       setErrorVisible(true);
       return;
     }
 
     setErrorVisible(false);
-    onLogin(rememberMe);
+    await onLogin(authenticatedUser, rememberMe);
   };
 
   return (

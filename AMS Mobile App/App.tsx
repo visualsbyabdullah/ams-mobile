@@ -19,8 +19,10 @@ import {
   saveAuthSession,
 } from "./src/features/auth/authStorage";
 import { colors } from "./src/theme";
+import { installWebFocusReset } from "./src/lib/installWebFocusReset";
 
 function AppShell() {
+  installWebFocusReset();
   const {
     employeeBundle,
     resolvedPolicy,

@@ -9,7 +9,7 @@ import {
 import { ForgotPasswordSheet } from "../../components/auth/ForgotPasswordSheet";
 import { AppIcon } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
-import { AuthUser, mockEmployeeCredentials } from "../../features/auth/mockAuth";
+import { AuthUser } from "../../features/auth/mockAuth";
 import { loginEmployee } from "../../features/auth/employeeAuthService";
 import { t } from "../../i18n";
 import { colors, fontFamily } from "../../theme";
@@ -19,8 +19,8 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [email, setEmail] = useState(mockEmployeeCredentials.email);
-  const [password, setPassword] = useState(mockEmployeeCredentials.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -155,11 +155,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {t("auth.adminManagedDesc")}
           </AppText>
         </View>
-      </View>
-
-      <View style={styles.demoCard}>
-        <AppIcon name="shield" size={17} color="accent" />
-        <AppText style={styles.demoText}>{t("auth.demoHint")}</AppText>
       </View>
 
       <ForgotPasswordSheet

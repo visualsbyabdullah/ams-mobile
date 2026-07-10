@@ -33,3 +33,25 @@ export const loginEmployee = async (
 export const logoutEmployee = async () => {
   await supabase.auth.signOut();
 };
+
+const getPasswordResetRedirectUrl = () => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return `${window.location.origin}/`;
+};
+
+export const sendPasswordResetEmail = async (email: string) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const redirectTo = getPasswordResetRedirectUrl();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    normalizedEmail,
+    redirectTo ? { redirectTo } : undefined
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+};

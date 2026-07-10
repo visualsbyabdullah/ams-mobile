@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
-import { AppIcon } from "../ui/AppIcon";
-import { AppText } from "../ui/AppText";
+import { Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
+
+import { sendPasswordResetEmail } from "../../features/auth/employeeAuthService";
 import { t } from "../../i18n";
 import { colors } from "../../theme";
+import { AppIcon } from "../ui/AppIcon";
+import { AppText } from "../ui/AppText";
 
 type ForgotPasswordSheetProps = {
   visible: boolean;
@@ -11,197 +13,273 @@ type ForgotPasswordSheetProps = {
   onClose: () => void;
 };
 
-export function ForgotPasswordSheet({
+export const ForgotPasswordSheet = ({
   visible,
   email,
   onClose,
-}: ForgotPasswordSheetProps) {
+}: ForgotPasswordSheetProps) => {
+  const [resetEmail, setResetEmail] = useState(email);
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const closeSheet = () => {
+  const handleClose = () => {
+    setResetEmail(email);
+    setSending(false);
     setSent(false);
+    setError(null);
     onClose();
   };
 
-  const registeredEmail = email.trim() || t("auth.registeredEmailFallback");
+  const handleSendReset = async () => {
+    setSending(true);
+    setError(null);
+    setSent(false);
+
+    try {
+      await sendPasswordResetEmail(resetEmail);
+      setSent(true);
+    } catch (resetError) {
+      setError(
+        resetError instanceof Error
+          ? resetError.message
+          : t("auth.resetEmailFailed")
+      );
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={closeSheet}>
-      <View style={styles.root}>
-        <Pressable style={styles.backdrop} onPress={closeSheet} />
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleClose}
+    >
+      <View style={styles.backdrop}>
+        <Pressable style={styles.backdropPressable} onPress={handleClose} />
 
-        <View style={styles.sheetWrap}>
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
 
+          <View style={styles.header}>
             <View style={styles.iconWrap}>
-              <AppIcon name={sent ? "check" : "mail"} size={26} color="accent" />
+              <AppIcon name="mail" size={20} color="accent" />
             </View>
 
-            <AppText style={styles.title}>
-              {sent ? t("auth.resetEmailSentTitle") : t("auth.forgotSheetTitle")}
-            </AppText>
-
-            <AppText style={styles.subtitle}>
-              {sent ? t("auth.resetEmailSentDesc") : t("auth.forgotSheetDesc")}
-            </AppText>
-
-            <View style={styles.emailCard}>
-              <View style={styles.emailIcon}>
-                <AppIcon name="mail" size={18} color="accent" />
-              </View>
-
-              <View style={styles.emailText}>
-                <AppText style={styles.emailLabel}>
-                  {t("auth.registeredEmail")}
-                </AppText>
-                <AppText style={styles.emailValue}>{registeredEmail}</AppText>
-              </View>
-            </View>
-
-            <View style={styles.noteCard}>
-              <AppIcon name="shield" size={17} color="accent" />
-              <AppText style={styles.noteText}>
-                {sent ? t("auth.resetEmailSentNote") : t("auth.forgotSheetNote")}
+            <View style={styles.headerText}>
+              <AppText style={styles.title}>{t("auth.forgotTitle")}</AppText>
+              <AppText style={styles.subtitle}>
+                {t("auth.forgotSubtitle")}
               </AppText>
             </View>
 
-            {sent ? (
-              <Pressable onPress={closeSheet} style={styles.doneButton}>
-                <AppText style={styles.doneButtonText}>{t("common.done")}</AppText>
-              </Pressable>
-            ) : (
-              <Pressable onPress={() => setSent(true)} style={styles.doneButton}>
-                <AppText style={styles.doneButtonText}>
-                  {t("auth.sendResetEmail")}
-                </AppText>
-              </Pressable>
-            )}
+            <Pressable onPress={handleClose} style={styles.closeButton}>
+              <AppIcon name="x" size={18} color="textMuted" />
+            </Pressable>
           </View>
+
+          <View style={styles.field}>
+            <AppText style={styles.label}>{t("auth.email")}</AppText>
+
+            <View style={styles.inputWrap}>
+              <AppIcon name="mail" size={18} color="textMuted" />
+              <TextInput
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder={t("auth.emailPlaceholder")}
+                placeholderTextColor={colors.textSoft}
+                style={styles.input}
+              />
+            </View>
+          </View>
+
+          {sent && (
+            <View style={styles.successBox}>
+              <AppIcon name="check" size={16} color="accent" />
+              <AppText style={styles.successText}>
+                {t("auth.resetEmailSent")}
+              </AppText>
+            </View>
+          )}
+
+          {error && (
+            <View style={styles.errorBox}>
+              <AppIcon name="x" size={16} color="danger" />
+              <AppText style={styles.errorText}>{error}</AppText>
+            </View>
+          )}
+
+          <Pressable
+            onPress={handleSendReset}
+            disabled={sending || !resetEmail.trim()}
+            style={[
+              styles.primaryButton,
+              (sending || !resetEmail.trim()) && styles.primaryButtonDisabled,
+            ]}
+          >
+            <AppText style={styles.primaryButtonText}>
+              {sending ? t("auth.sendingResetEmail") : t("auth.sendResetEmail")}
+            </AppText>
+          </Pressable>
+
+          <AppText style={styles.note}>
+            {t("auth.resetEmailNote")}
+          </AppText>
         </View>
       </View>
     </Modal>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-  },
   backdrop: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: colors.overlay,
-  },
-  sheetWrap: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 22,
-    paddingVertical: 34,
+    backgroundColor: colors.backdrop,
+    justifyContent: "flex-end",
+  },
+  backdropPressable: {
+    ...StyleSheet.absoluteFillObject,
   },
   sheet: {
     width: "100%",
-    maxWidth: 390,
-    borderRadius: 28,
-    backgroundColor: colors.background,
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 18,
+    maxWidth: 430,
+    alignSelf: "center",
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 34,
   },
   handle: {
-    width: 44,
+    width: 42,
     height: 5,
     borderRadius: 999,
     backgroundColor: colors.border,
     alignSelf: "center",
     marginBottom: 18,
   },
-  iconWrap: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    backgroundColor: colors.accentSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: colors.text,
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 8,
-    marginBottom: 18,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  emailCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 18,
   },
-  emailIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.accentSoft,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
-  emailText: {
+  headerText: {
     flex: 1,
   },
-  emailLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: 3,
-  },
-  emailValue: {
-    fontSize: 14,
-    color: colors.text,
+  title: {
+    fontSize: 18,
+    lineHeight: 24,
     fontWeight: "800",
+    color: colors.text,
   },
-  noteCard: {
-    marginTop: 6,
-    borderRadius: 18,
-    backgroundColor: colors.accentSoft,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  noteText: {
-    flex: 1,
+  subtitle: {
     fontSize: 13,
     lineHeight: 18,
     color: colors.textMuted,
+    marginTop: 2,
   },
-  doneButton: {
-    marginTop: 16,
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  field: {
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 8,
+  },
+  inputWrap: {
+    minHeight: 52,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  input: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    borderWidth: 0,
+    outlineStyle: "none",
+    outlineWidth: 0,
+  },
+  successBox: {
+    borderRadius: 18,
+    backgroundColor: colors.accentSoft,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  successText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.accent,
+    fontWeight: "700",
+  },
+  errorBox: {
+    borderRadius: 18,
+    backgroundColor: colors.dangerSoft,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.danger,
+    fontWeight: "700",
+  },
+  primaryButton: {
     height: 52,
     borderRadius: 26,
     backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
-  doneButtonText: {
-    color: colors.inverseText,
+  primaryButtonDisabled: {
+    opacity: 0.5,
+  },
+  primaryButtonText: {
     fontSize: 14,
-    fontWeight: "900",
+    lineHeight: 18,
+    fontWeight: "800",
+    color: colors.inverseText,
+  },
+  note: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: 12,
   },
 });

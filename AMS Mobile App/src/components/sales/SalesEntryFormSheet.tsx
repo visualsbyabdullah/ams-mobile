@@ -12,7 +12,6 @@ import { AppIcon } from "../ui/AppIcon";
 import { AppText } from "../ui/AppText";
 import { useEmployeeSession } from "../../features/session";
 import { createSalesEntry } from "../../features/sales";
-import { getPreciseLocation, PreciseLocationPayload } from "../../features/location/preciseLocation";
 import { t } from "../../i18n";
 import { colors } from "../../theme";
 
@@ -35,8 +34,6 @@ export const SalesEntryFormSheet = ({
   const [customerName, setCustomerName] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [location, setLocation] = useState<PreciseLocationPayload | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +44,6 @@ export const SalesEntryFormSheet = ({
     setProductOrService("");
     setCustomerName("");
     setNotes("");
-    setLocation(null);
     setMessage(null);
     setError(null);
   };
@@ -55,27 +51,6 @@ export const SalesEntryFormSheet = ({
   const handleClose = () => {
     resetForm();
     onClose();
-  };
-
-  const handleCaptureLocation = async () => {
-    setLoadingLocation(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const preciseLocation = await getPreciseLocation();
-      setLocation(preciseLocation);
-      setMessage(t("sales.locationCaptured"));
-    } catch (captureError) {
-      const errorMessage =
-        captureError instanceof Error
-          ? captureError.message
-          : t("sales.locationFailed");
-
-      setError(errorMessage);
-    } finally {
-      setLoadingLocation(false);
-    }
   };
 
   const handleSubmit = async () => {
@@ -105,15 +80,10 @@ export const SalesEntryFormSheet = ({
         productOrService: productOrService.trim() || undefined,
         customerName: customerName.trim() || undefined,
         notes: notes.trim() || undefined,
-        latitude: location?.latitude,
-        longitude: location?.longitude,
-        locationAccuracyMeters: location?.accuracyMeters,
-        preciseLocationVerified: location?.preciseLocationVerified ?? false,
       });
 
       setMessage(t("sales.entrySaved"));
       resetForm();
-      setSalesCount("1");
       onSaved?.();
     } catch (submitError) {
       const errorMessage =
@@ -209,26 +179,6 @@ export const SalesEntryFormSheet = ({
                 multiline
               />
             </View>
-
-            <Pressable
-              style={styles.locationButton}
-              onPress={handleCaptureLocation}
-              disabled={loadingLocation}
-            >
-              <AppIcon name="check" size={17} color="accent" />
-              <AppText style={styles.locationButtonText}>
-                {loadingLocation
-                  ? t("sales.capturingLocation")
-                  : t("sales.capturePreciseLocation")}
-              </AppText>
-            </Pressable>
-
-            {location && (
-              <AppText style={styles.locationText}>
-                {t("sales.locationAccuracy")}:{" "}
-                {Math.round(location.accuracyMeters)}m
-              </AppText>
-            )}
 
             {error && <AppText style={styles.errorText}>{error}</AppText>}
             {message && <AppText style={styles.successText}>{message}</AppText>}
@@ -328,29 +278,6 @@ const styles = StyleSheet.create({
     minHeight: 88,
     paddingTop: 12,
     textAlignVertical: "top",
-  },
-  locationButton: {
-    minHeight: 48,
-    borderRadius: 20,
-    backgroundColor: colors.accentSoft,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  locationButtonText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "800",
-    color: colors.accent,
-  },
-  locationText: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 8,
   },
   errorText: {
     fontSize: 12,

@@ -27,7 +27,6 @@ export const defaultPolicy: ResolvedPolicy = {
       assignmentMode: "selected_employees",
       assigned: false,
       permissions: {
-        captureLocation: true,
       },
     },
     breakTracking: {
@@ -95,7 +94,6 @@ export const defaultPolicy: ResolvedPolicy = {
         createSaleEntry: false,
         viewOwnSales: false,
         viewBranchSales: false,
-        captureLocation: true,
         uploadAttachment: true,
       },
     },

@@ -55,7 +55,7 @@ function AppShell() {
   }, []);
 
   const handleLogin = async (nextUser: AuthUser, rememberMe: boolean) => {
-    await loadEmployeeBundle(nextUser.email);
+    await loadEmployeeBundle(nextUser.email, nextUser.id);
     setUser(nextUser);
     await saveAuthSession(nextUser, rememberMe);
   };
@@ -84,7 +84,7 @@ function AppShell() {
       return;
     }
 
-    void loadEmployeeBundle(user.email);
+    void loadEmployeeBundle(user.email, user.id);
   }, [
     authReady,
     user?.email,

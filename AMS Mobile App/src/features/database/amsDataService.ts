@@ -354,10 +354,34 @@ export const getEmployeeByEmail = async (email: string) => {
   return unwrapSingle(data, error);
 };
 
-export const getEmployeeBundleByEmail = async (
+export const getEmployeeByAuthUserIdOrEmail = async (
+  authUserId: string | null | undefined,
+  email: string
+) => {
+  if (authUserId) {
+    const { data, error } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle<DbEmployee>();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return data;
+    }
+  }
+
+  return getEmployeeByEmail(email);
+};
+
+export const getEmployeeBundleByAuthUserIdOrEmail = async (
+  authUserId: string | null | undefined,
   email: string
 ): Promise<EmployeeBundle> => {
-  const employee = await getEmployeeByEmail(email);
+  const employee = await getEmployeeByAuthUserIdOrEmail(authUserId, email);
 
   const [
     organizationResult,
@@ -552,6 +576,12 @@ export const getEmployeeBundleByEmail = async (
     assignedModulePolicy,
     resolvedPolicy,
   };
+};
+
+export const getEmployeeBundleByEmail = async (
+  email: string
+): Promise<EmployeeBundle> => {
+  return getEmployeeBundleByAuthUserIdOrEmail(null, email);
 };
 
 export const testSupabaseConnection = async () => {

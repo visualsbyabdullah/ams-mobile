@@ -8,7 +8,7 @@ import {
 
 import {
   EmployeeBundle,
-  getEmployeeBundleByEmail,
+  getEmployeeBundleByAuthUserIdOrEmail,
 } from "../database/amsDataService";
 import { ResolvedPolicy } from "../policies/types";
 import { defaultPolicy } from "../../config/defaultPolicy";
@@ -18,7 +18,10 @@ type EmployeeSessionContextValue = {
   resolvedPolicy: ResolvedPolicy;
   loadingEmployeeBundle: boolean;
   employeeBundleError: string | null;
-  loadEmployeeBundle: (email: string) => Promise<EmployeeBundle | null>;
+  loadEmployeeBundle: (
+    email: string,
+    authUserId?: string | null
+  ) => Promise<EmployeeBundle | null>;
   clearEmployeeBundle: () => void;
 };
 
@@ -36,12 +39,18 @@ export const EmployeeSessionProvider = ({
   const [employeeBundleError, setEmployeeBundleError] =
     useState<string | null>(null);
 
-  const loadEmployeeBundle = async (email: string) => {
+  const loadEmployeeBundle = async (
+    email: string,
+    authUserId?: string | null
+  ) => {
     setLoadingEmployeeBundle(true);
     setEmployeeBundleError(null);
 
     try {
-      const bundle = await getEmployeeBundleByEmail(email);
+      const bundle = await getEmployeeBundleByAuthUserIdOrEmail(
+        authUserId,
+        email
+      );
       setEmployeeBundle(bundle);
       return bundle;
     } catch (error) {

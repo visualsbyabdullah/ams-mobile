@@ -12,6 +12,7 @@ import { AppNavigator } from "./src/navigation/AppNavigator";
 import { EmployeeSessionProvider, useEmployeeSession } from "./src/features/session";
 import { AuthUser } from "./src/features/auth/mockAuth";
 import { LoginScreen } from "./src/screens/auth/LoginScreen";
+import { ResetPasswordSheet } from "./src/components/auth/ResetPasswordSheet";
 import { logoutEmployee } from "./src/features/auth/employeeAuthService";
 import {
   clearAuthSession,
@@ -20,6 +21,7 @@ import {
 } from "./src/features/auth/authStorage";
 import { colors } from "./src/theme";
 import { installWebFocusReset } from "./src/lib/installWebFocusReset";
+import { supabase } from "./src/lib/supabase";
 
 function AppShell() {
   installWebFocusReset();
@@ -33,6 +35,19 @@ function AppShell() {
   } = useEmployeeSession();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [resetPasswordVisible, setResetPasswordVisible] = useState(false);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setResetPasswordVisible(true);
+      }
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -112,6 +127,10 @@ function AppShell() {
       <>
         <StatusBar style="dark" />
         <LoginScreen onLogin={handleLogin} />
+        <ResetPasswordSheet
+          visible={resetPasswordVisible}
+          onClose={() => setResetPasswordVisible(false)}
+        />
       </>
     );
   }
@@ -120,6 +139,10 @@ function AppShell() {
     <>
       <StatusBar style="dark" />
       <AppNavigator onLogout={handleLogout} resolvedPolicy={resolvedPolicy} />
+      <ResetPasswordSheet
+        visible={resetPasswordVisible}
+        onClose={() => setResetPasswordVisible(false)}
+      />
     </>
   );
 }

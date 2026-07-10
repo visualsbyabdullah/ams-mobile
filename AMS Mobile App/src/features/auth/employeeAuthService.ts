@@ -55,3 +55,13 @@ export const sendPasswordResetEmail = async (email: string) => {
     throw new Error(error.message);
   }
 };
+
+export const updateRecoveryPassword = async (password: string) => {
+  const { error } = await supabase.auth.updateUser({
+    password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+};

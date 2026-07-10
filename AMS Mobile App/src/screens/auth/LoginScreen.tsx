@@ -9,11 +9,7 @@ import {
 import { ForgotPasswordSheet } from "../../components/auth/ForgotPasswordSheet";
 import { AppIcon } from "../../components/ui/AppIcon";
 import { AppText } from "../../components/ui/AppText";
-import {
-  AuthUser,
-  mockAuthUser,
-  mockEmployeeCredentials,
-} from "../../features/auth/mockAuth";
+import { AuthUser, authenticateMockEmployee, mockEmployeeCredentials } from "../../features/auth/mockAuth";
 import { t } from "../../i18n";
 import { colors, fontFamily } from "../../theme";
 
@@ -41,7 +37,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
 
     setErrorVisible(false);
-    onLogin(mockAuthUser, rememberMe);
+    onLogin(rememberMe);
   };
 
   return (

@@ -443,4 +443,12 @@ export const en = {
   "sales.entrySaveFailed": "Unable to save sales entry.",
   "sales.saving": "Saving...",
   "sales.saveEntry": "Save entry",
+  "sales.recentEntries": "Recent sales entries",
+  "sales.loading": "Loading...",
+  "sales.refresh": "Refresh",
+  "sales.loadingEntries": "Loading sales entries...",
+  "sales.noEntries": "No sales entries yet.",
+  "sales.saleEntry": "Sale entry",
+  "sales.customer": "Customer",
+  "sales.preciseLocationVerified": "Precise location verified",
 };

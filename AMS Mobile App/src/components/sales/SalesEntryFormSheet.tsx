@@ -19,11 +19,13 @@ import { colors } from "../../theme";
 type SalesEntryFormSheetProps = {
   visible: boolean;
   onClose: () => void;
+  onSaved?: () => void;
 };
 
 export const SalesEntryFormSheet = ({
   visible,
   onClose,
+  onSaved,
 }: SalesEntryFormSheetProps) => {
   const { employeeBundle } = useEmployeeSession();
 
@@ -112,6 +114,7 @@ export const SalesEntryFormSheet = ({
       setMessage(t("sales.entrySaved"));
       resetForm();
       setSalesCount("1");
+      onSaved?.();
     } catch (submitError) {
       const errorMessage =
         submitError instanceof Error

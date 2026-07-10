@@ -8,6 +8,10 @@ import {
   EmployeeRequest,
   getEmployeeRequests,
 } from "./employeeRequestService";
+import {
+  emitEmployeeRequestChanged,
+  subscribeEmployeeRequestChanged,
+} from "./requestEvents";
 
 export const useEmployeeRequests = () => {
   const { employeeBundle } = useEmployeeSession();
@@ -52,6 +56,7 @@ export const useEmployeeRequests = () => {
       try {
         const nextRequest = await createEmployeeRequest(employeeBundle, input);
         setRequests((current) => [nextRequest, ...current]);
+        emitEmployeeRequestChanged();
         return nextRequest;
       } catch (requestError) {
         const message =
@@ -89,6 +94,7 @@ export const useEmployeeRequests = () => {
               : item
           )
         );
+        emitEmployeeRequestChanged();
       } catch (requestError) {
         const message =
           requestError instanceof Error

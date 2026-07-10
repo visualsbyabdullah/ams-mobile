@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { RequestType } from "../../features/requests/types";
+import { useEmployeeRequests } from "../../features/requests";
 import { t } from "../../i18n";
 import { colors, radius, spacing } from "../../theme";
 import { AppButton } from "../ui/AppButton";
@@ -53,6 +54,54 @@ const meta: Record<RequestType, RequestMeta> = {
   },
 };
 
+const getTodayValue = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateInput = (value: string) => {
+  const trimmed = value.trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return null;
+  }
+
+  const [year, month, day] = trimmed.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+const toDateValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const isBeforeToday = (date: Date) => {
+  const today = parseDateInput(getTodayValue());
+
+  if (!today) {
+    return false;
+  }
+
+  return date.getTime() < today.getTime();
+};
+
 export function RequestFormSheet({
   type,
   visible,
@@ -62,16 +111,20 @@ export function RequestFormSheet({
   const [secondary, setSecondary] = useState("");
   const [reason, setReason] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const { createRequest, saving } = useEmployeeRequests();
 
   const activeMeta = type ? meta[type] : null;
+  const todayPlaceholder = getTodayValue();
 
   const labels = useMemo(() => {
     if (type === "leave") {
       return {
         primary: t("common.fromDate"),
-        primaryPlaceholder: "2026-07-09",
+        primaryPlaceholder: todayPlaceholder,
         secondary: t("common.toDate"),
-        secondaryPlaceholder: "2026-07-10",
+        secondaryPlaceholder: todayPlaceholder,
         reason: t("common.reason"),
         reasonPlaceholder: t("requestForm.leaveType"),
         keyboardType: "default" as const,
@@ -83,7 +136,7 @@ export function RequestFormSheet({
         primary: t("requestForm.loanAmount"),
         primaryPlaceholder: "25000",
         secondary: t("common.date"),
-        secondaryPlaceholder: "2026-07-09",
+        secondaryPlaceholder: todayPlaceholder,
         reason: t("common.reason"),
         reasonPlaceholder: t("requestForm.loanDesc"),
         keyboardType: "numeric" as const,
@@ -95,7 +148,7 @@ export function RequestFormSheet({
         primary: t("common.title"),
         primaryPlaceholder: t("requestForm.ticketCategory"),
         secondary: t("common.date"),
-        secondaryPlaceholder: "2026-07-09",
+        secondaryPlaceholder: todayPlaceholder,
         reason: t("common.description"),
         reasonPlaceholder: t("requestForm.ticketDesc"),
         keyboardType: "default" as const,
@@ -104,25 +157,175 @@ export function RequestFormSheet({
 
     return {
       primary: t("requestForm.wfhDate"),
-      primaryPlaceholder: "2026-07-09",
+      primaryPlaceholder: todayPlaceholder,
       secondary: t("common.title"),
       secondaryPlaceholder: t("requestForm.wfhRequest"),
       reason: t("common.reason"),
       reasonPlaceholder: t("requestForm.wfhDesc"),
       keyboardType: "default" as const,
     };
-  }, [type]);
+  }, [type, todayPlaceholder]);
 
   const resetForm = () => {
     setPrimary("");
     setSecondary("");
     setReason("");
     setSubmitted(false);
+    setFormError(null);
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const validateDate = (value: string) => {
+    if (!value.trim()) {
+      return t("requestForm.dateRequired");
+    }
+
+    const parsed = parseDateInput(value);
+
+    if (!parsed) {
+      return t("requestForm.invalidDate");
+    }
+
+    if (isBeforeToday(parsed)) {
+      return t("requestForm.pastDateNotAllowed");
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    if (!type || saving) {
+      return;
+    }
+
+    setFormError(null);
+
+    try {
+      if (type === "leave") {
+        const startDateError = validateDate(primary);
+        const endDateError = validateDate(secondary);
+
+        if (startDateError || endDateError) {
+          setFormError(startDateError ?? endDateError);
+          return;
+        }
+
+        const startDate = parseDateInput(primary);
+        const endDate = parseDateInput(secondary);
+
+        if (!startDate || !endDate) {
+          setFormError(t("requestForm.invalidDate"));
+          return;
+        }
+
+        if (endDate.getTime() < startDate.getTime()) {
+          setFormError(t("requestForm.endDateBeforeStart"));
+          return;
+        }
+
+        await createRequest({
+          type,
+          title: t("requests.annualLeave"),
+          description: reason.trim() || null,
+          startDate: toDateValue(startDate),
+          endDate: toDateValue(endDate),
+        });
+      }
+
+      if (type === "wfh") {
+        const dateError = validateDate(primary);
+
+        if (dateError) {
+          setFormError(dateError);
+          return;
+        }
+
+        const requestDate = parseDateInput(primary);
+
+        if (!requestDate) {
+          setFormError(t("requestForm.invalidDate"));
+          return;
+        }
+
+        await createRequest({
+          type,
+          title: secondary.trim() || t("requests.wfhRequest"),
+          description: reason.trim() || null,
+          startDate: toDateValue(requestDate),
+          endDate: toDateValue(requestDate),
+        });
+      }
+
+      if (type === "loan") {
+        if (!primary.trim()) {
+          setFormError(t("requestForm.amountRequired"));
+          return;
+        }
+
+        const dateError = validateDate(secondary);
+
+        if (dateError) {
+          setFormError(dateError);
+          return;
+        }
+
+        const requestDate = parseDateInput(secondary);
+
+        if (!requestDate) {
+          setFormError(t("requestForm.invalidDate"));
+          return;
+        }
+
+        await createRequest({
+          type,
+          title: t("requests.loanRequest"),
+          description: reason.trim()
+            ? `${t("requestForm.loanAmount")}: ${primary.trim()} · ${reason.trim()}`
+            : `${t("requestForm.loanAmount")}: ${primary.trim()}`,
+          startDate: toDateValue(requestDate),
+          endDate: toDateValue(requestDate),
+        });
+      }
+
+      if (type === "ticket") {
+        if (!primary.trim()) {
+          setFormError(t("requestForm.titleRequired"));
+          return;
+        }
+
+        const dateError = validateDate(secondary);
+
+        if (dateError) {
+          setFormError(dateError);
+          return;
+        }
+
+        const requestDate = parseDateInput(secondary);
+
+        if (!requestDate) {
+          setFormError(t("requestForm.invalidDate"));
+          return;
+        }
+
+        await createRequest({
+          type,
+          title: primary.trim(),
+          description: reason.trim() || null,
+          startDate: toDateValue(requestDate),
+          endDate: toDateValue(requestDate),
+        });
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : t("requestForm.submitFailed")
+      );
+    }
   };
 
   if (!activeMeta) return null;
@@ -184,14 +387,20 @@ export function RequestFormSheet({
                     placeholder={labels.primaryPlaceholder}
                     value={primary}
                     keyboardType={labels.keyboardType}
-                    onChangeText={setPrimary}
+                    onChangeText={(value) => {
+                      setPrimary(value);
+                      setFormError(null);
+                    }}
                   />
 
                   <AppTextInput
                     label={labels.secondary}
                     placeholder={labels.secondaryPlaceholder}
                     value={secondary}
-                    onChangeText={setSecondary}
+                    onChangeText={(value) => {
+                      setSecondary(value);
+                      setFormError(null);
+                    }}
                   />
 
                   <AppTextInput
@@ -199,13 +408,23 @@ export function RequestFormSheet({
                     placeholder={labels.reasonPlaceholder}
                     value={reason}
                     multiline
-                    onChangeText={setReason}
+                    onChangeText={(value) => {
+                      setReason(value);
+                      setFormError(null);
+                    }}
                   />
+
+                  {formError && (
+                    <View style={styles.errorBox}>
+                      <AppIcon name="shield" size={16} color="danger" />
+                      <AppText style={styles.errorText}>{formError}</AppText>
+                    </View>
+                  )}
                 </View>
 
                 <AppButton
-                  title={t("common.submit")}
-                  onPress={() => setSubmitted(true)}
+                  title={saving ? t("common.saving") : t("common.submit")}
+                  onPress={handleSubmit}
                 />
               </>
             )}
@@ -277,6 +496,22 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
+  },
+  errorBox: {
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  errorText: {
+    flex: 1,
+    color: colors.danger,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "700",
   },
   successState: {
     alignItems: "center",

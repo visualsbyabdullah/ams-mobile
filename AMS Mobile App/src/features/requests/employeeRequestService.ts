@@ -1,7 +1,8 @@
 import { supabase } from "../../lib/supabase";
 import { EmployeeBundle } from "../database/amsDataService";
+import { RequestType } from "./types";
 
-export type EmployeeRequestType = "leave" | "wfh" | "attendance" | "other";
+export type EmployeeRequestType = RequestType;
 
 export type EmployeeRequestStatus =
   | "pending"

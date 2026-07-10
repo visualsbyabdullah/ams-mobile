@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { AppIcon } from "../ui/AppIcon";
 import { AppText } from "../ui/AppText";
+import { SalesEntryFormSheet } from "./SalesEntryFormSheet";
 import { useEmployeeSession } from "../../features/session";
 import {
   canCreateSaleEntry,
@@ -20,6 +22,7 @@ export const SalesModuleSheet = ({
   visible,
   onClose,
 }: SalesModuleSheetProps) => {
+  const [entryFormVisible, setEntryFormVisible] = useState(false);
   const { resolvedPolicy } = useEmployeeSession();
 
   const canCreate = canCreateSaleEntry(resolvedPolicy);
@@ -91,6 +94,7 @@ export const SalesModuleSheet = ({
 
           <Pressable
             disabled={!canCreate}
+            onPress={() => setEntryFormVisible(true)}
             style={[
               styles.primaryButton,
               !canCreate && styles.primaryButtonDisabled,
@@ -103,6 +107,11 @@ export const SalesModuleSheet = ({
 
           <AppText style={styles.note}>{t("sales.nextStepNote")}</AppText>
         </View>
+
+        <SalesEntryFormSheet
+          visible={entryFormVisible}
+          onClose={() => setEntryFormVisible(false)}
+        />
       </View>
     </Modal>
   );
